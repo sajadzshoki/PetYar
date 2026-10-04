@@ -146,6 +146,8 @@ onMounted(load)
 
       <p class="mt-10">
         <NuxtLink to="/pets" class="text-sm text-terracotta-700">حیوانات خانگی من</NuxtLink>
+        <span class="mx-2 text-ink-300">·</span>
+        <NuxtLink to="/provider" class="text-sm text-terracotta-700">پرونده ارائه‌دهنده</NuxtLink>
       </p>
     </div>
   </div>

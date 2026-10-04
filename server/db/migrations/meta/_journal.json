@@ -15,6 +15,13 @@
       "when": 1728086400000,
       "tag": "0001_phase02_users_pets",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1728172800000,
+      "tag": "0002_phase03_providers",
+      "breakpoints": true
     }
   ]
 }

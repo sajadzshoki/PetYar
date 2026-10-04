@@ -25,9 +25,10 @@ async function logout() {
       </NuxtLink>
 
       <nav class="hidden items-center gap-7 text-sm text-ink-700 md:flex">
+        <NuxtLink to="/providers" class="hover:text-ink-900">ارائه‌دهندگان</NuxtLink>
         <NuxtLink to="/#how" class="hover:text-ink-900">چطور کار می‌کند</NuxtLink>
-        <NuxtLink to="/#trust" class="hover:text-ink-900">اعتماد</NuxtLink>
         <NuxtLink v-if="loggedIn" to="/pets" class="hover:text-ink-900">حیوانات من</NuxtLink>
+        <NuxtLink v-if="loggedIn" to="/provider" class="hover:text-ink-900">خدمات من</NuxtLink>
         <NuxtLink v-if="loggedIn" to="/account" class="hover:text-ink-900">حساب من</NuxtLink>
       </nav>
 
@@ -54,9 +55,10 @@ async function logout() {
 
     <div v-if="open" class="border-t border-ink-200 px-4 py-3 md:hidden">
       <div class="flex flex-col gap-3 text-sm">
+        <NuxtLink to="/providers" @click="open = false">ارائه‌دهندگان</NuxtLink>
         <NuxtLink to="/#how" @click="open = false">چطور کار می‌کند</NuxtLink>
-        <NuxtLink to="/#trust" @click="open = false">اعتماد</NuxtLink>
         <NuxtLink v-if="loggedIn" to="/pets" @click="open = false">حیوانات من</NuxtLink>
+        <NuxtLink v-if="loggedIn" to="/provider" @click="open = false">خدمات من</NuxtLink>
         <NuxtLink v-if="loggedIn" to="/account" @click="open = false">حساب من</NuxtLink>
         <UButton v-if="loggedIn" color="neutral" variant="outline" block @click="logout">خروج</UButton>
         <div v-else class="flex gap-2">

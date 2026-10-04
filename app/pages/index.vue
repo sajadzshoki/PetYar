@@ -13,8 +13,8 @@
             واکسیناسیون، نگهداری، آرایش و مراقبت — با آدم‌هایی که می‌شناسید.
           </p>
           <div class="mt-8 flex flex-wrap gap-3">
-            <UButton to="/register" size="lg">ساخت حساب</UButton>
-            <UButton to="/login" size="lg" color="neutral" variant="outline">ورود</UButton>
+            <UButton to="/providers" size="lg">مشاهده ارائه‌دهندگان</UButton>
+            <UButton to="/register" size="lg" color="neutral" variant="outline">ساخت حساب</UButton>
           </div>
           <p class="mt-6 text-xs text-ink-500">در حال ساخت زیربنا. رزرو و پرداخت در فازهای بعد فعال می‌شود.</p>
         </div>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { UserRole } from '../../shared/constants/roles'
+import type { UserRole } from '~~/shared/constants/roles'
 
 definePageMeta({ middleware: 'guest' })
 

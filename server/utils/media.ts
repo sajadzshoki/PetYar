@@ -35,6 +35,12 @@ export function contentTypeFromKey(key: string) {
   return 'image/jpeg'
 }
 
+export function isPublicMedia(key: string) {
+  return key.startsWith('providers/')
+}
+
 export function canAccessMedia(userId: string, key: string) {
-  return key.startsWith(`avatars/${userId}/`) || key.startsWith(`pets/${userId}/`)
+  return isPublicMedia(key)
+    || key.startsWith(`avatars/${userId}/`)
+    || key.startsWith(`pets/${userId}/`)
 }

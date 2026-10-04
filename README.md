@@ -1,6 +1,6 @@
 # PetYar (پت‌یار)
 
-Iranian pet-services marketplace. **Phase 02** adds real user profiles and pet health records on top of the Phase 01 foundation. Marketplace, bookings, payments, chat, reviews, and admin are intentionally not implemented.
+Iranian pet-services marketplace. **Phase 03** adds provider profiles, service catalog, and public provider pages. Bookings, payments, chat, reviews, and admin are intentionally not implemented.
 
 ## Architecture
 
@@ -20,7 +20,7 @@ Rules:
 - Object storage is an interface (`server/storage`) with a local adapter and a MinIO-ready driver switch.
 - PWA-ready: `public/manifest.webmanifest`, theme color, RTL, mobile-first layout.
 
-Pets, vaccinations, medications, and care notes are implemented. Future tables (providers, services, availability, bookings, payments, reviews, messages, notifications, favorites, reports, disputes, verification) are still out of scope.
+Pets and provider marketplace listings are implemented. Future tables (availability, bookings, payments, reviews, messages, notifications, favorites, reports, disputes, verification) are still out of scope.
 
 ## Local setup
 
@@ -87,7 +87,13 @@ npm run db:studio
 - Profile: `GET/PATCH /api/profile`, `POST /api/profile/avatar`. Email is identity (not editable). Users can only change their own row.
 - Pets: CRUD-style APIs under `/api/pets`. Owner ID always comes from the session.
 - Soft archive (`DELETE`) keeps medical history; `POST .../restore` undoes it.
-- Images go through the storage abstraction and are served from `GET /api/media/**` only to the owning user.
+- Images go through the storage abstraction (`GET /api/media/**`). Pet/avatar files stay owner-only; provider photos/gallery are public.
+
+## Providers (phase 03)
+
+- Own profile: `GET/POST/PATCH /api/provider`, photo and gallery uploads. Creating a profile promotes `OWNER` → `PROVIDER`.
+- Services: `/api/provider/services` with activate/deactivate and delete. Categories are seeded (sitting, walking, boarding, grooming, taxi, vet, training, home care).
+- Public: `GET /api/providers`, `GET /api/providers/:id`, pages `/providers` and `/providers/:id`. No fake ratings. Availability is a placeholder only.
 
 ## Module boundaries
 
