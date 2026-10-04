@@ -12,9 +12,12 @@
             پت‌یار جاییست که صاحب حیوان خانگی، ارائه‌دهندهٔ خدمات و اعتماد به هم می‌رسند.
             واکسیناسیون، نگهداری، آرایش و مراقبت — با آدم‌هایی که می‌شناسید.
           </p>
-          <div class="mt-8 flex flex-wrap gap-3">
-            <UButton to="/providers" size="lg">مشاهده ارائه‌دهندگان</UButton>
-            <UButton to="/register" size="lg" color="neutral" variant="outline">ساخت حساب</UButton>
+          <form class="mt-8 flex max-w-md gap-2" action="/providers" method="get">
+            <UInput name="q" class="flex-1" placeholder="جستجوی خدمت یا محله" />
+            <UButton type="submit" size="lg">جستجو</UButton>
+          </form>
+          <div class="mt-4 flex flex-wrap gap-3">
+            <UButton to="/providers" size="lg" color="neutral" variant="outline">همه ارائه‌دهندگان</UButton>
           </div>
           <p class="mt-6 text-xs text-ink-500">در حال ساخت زیربنا. رزرو و پرداخت در فازهای بعد فعال می‌شود.</p>
         </div>

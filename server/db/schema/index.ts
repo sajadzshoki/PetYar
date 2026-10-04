@@ -1,6 +1,8 @@
 /**
  * Phase 03 schema: users, pets, providers, services, categories.
  *
+ * Phase 04 adds search indexes on providers/services.
+ *
  * Future modules (do not implement yet):
  * availability, bookings, payments, reviews, messages,
  * notifications, favorites, reports, disputes, verification.

@@ -1,6 +1,6 @@
 # PetYar (پت‌یار)
 
-Iranian pet-services marketplace. **Phase 03** adds provider profiles, service catalog, and public provider pages. Bookings, payments, chat, reviews, and admin are intentionally not implemented.
+Iranian pet-services marketplace. **Phase 04** adds server-side provider/service discovery (search, filters, sort, pagination). Bookings, payments, chat, reviews, and admin are intentionally not implemented.
 
 ## Architecture
 
@@ -93,7 +93,13 @@ npm run db:studio
 
 - Own profile: `GET/POST/PATCH /api/provider`, photo and gallery uploads. Creating a profile promotes `OWNER` → `PROVIDER`.
 - Services: `/api/provider/services` with activate/deactivate and delete. Categories are seeded (sitting, walking, boarding, grooming, taxi, vet, training, home care).
-- Public: `GET /api/providers`, `GET /api/providers/:id`, pages `/providers` and `/providers/:id`. No fake ratings. Availability is a placeholder only.
+- Public: `GET /api/providers/:id`, pages `/providers` and `/providers/:id`. No fake ratings. Availability is a placeholder only.
+
+## Search (phase 04)
+
+- `GET /api/providers` runs SQL search (never ships the full catalog to the client): `q`, `category`, `city`, `district`, `priceMin`/`priceMax`, `view=providers|services`, `sort`, `page`/`pageSize`, optional `lat`/`lng`/`radiusKm`.
+- Location uses Haversine on stored numeric coordinates and the provider service radius. PostGIS can replace that fragment later.
+- Query string on `/providers` is the source of truth. Facets: `GET /api/discovery/facets`.
 
 ## Module boundaries
 

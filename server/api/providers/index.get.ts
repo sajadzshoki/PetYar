@@ -1,7 +1,11 @@
 import { handleApi } from '../../utils/api-response'
-import { providerService } from '../../services/provider.service'
+import { parseBody } from '../../utils/validate'
+import { flattenQuery } from '../../utils/query'
+import { providerSearchSchema } from '../../../shared/validation/search'
+import { searchService } from '../../services/search.service'
 
-export default defineEventHandler(() => handleApi(async () => {
-  const providers = await providerService.listPublic()
-  return { status: 'ok' as const, data: { providers } }
+export default defineEventHandler(event => handleApi(async () => {
+  const input = parseBody(providerSearchSchema, flattenQuery(getQuery(event) as Record<string, unknown>))
+  const result = await searchService.search(input)
+  return { status: 'ok' as const, data: result }
 }))
