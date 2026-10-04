@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import type { Booking } from '~~/shared/types/booking'
 import type { Payment } from '~~/shared/types/payment'
+import type { Review } from '~~/shared/types/review'
 import { BOOKING_STATUS_LABELS } from '~~/shared/constants/bookings'
 import { PAYMENT_STATUS_LABELS } from '~~/shared/constants/payments'
+import { REVIEW_DIMENSION_LABELS, REVIEW_DIMENSIONS, type ReviewDimension } from '~~/shared/constants/reviews'
 import { apiErrorMessage } from '~/utils/api-error'
 
 definePageMeta({ middleware: 'auth' })
@@ -17,6 +19,16 @@ const reason = ref('')
 const payPending = ref(false)
 const payError = ref('')
 const gatewayReason = ref('')
+const reviewPending = ref(false)
+const reviewError = ref('')
+const reviewForm = reactive({
+  overall: 5,
+  communication: 5,
+  quality: 5,
+  punctuality: 5,
+  care: 5,
+  comment: '',
+})
 
 async function load() {
   loading.value = true
@@ -113,6 +125,29 @@ async function startPay() {
 function when(iso: string) {
   return new Date(iso).toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' })
 }
+
+function setScore(key: ReviewDimension, value: number) {
+  reviewForm[key] = value
+}
+
+async function submitReview() {
+  if (!booking.value) return
+  reviewPending.value = true
+  reviewError.value = ''
+  try {
+    const res = await $fetch<{ data: { review: Review } }>(`/api/bookings/${booking.value.id}/review`, {
+      method: 'POST',
+      body: { ...reviewForm },
+    })
+    booking.value = { ...booking.value, review: res.data.review, canReview: false }
+  }
+  catch (err) {
+    reviewError.value = apiErrorMessage(err, 'ثبت نظر ناموفق بود')
+  }
+  finally {
+    reviewPending.value = false
+  }
+}
 </script>
 
 <template>
@@ -141,6 +176,36 @@ function when(iso: string) {
       <p v-if="booking.cancellationReason" class="mt-2 text-sm text-ink-600">{{ booking.cancellationReason }}</p>
       <p v-if="error" class="mt-4 text-sm text-terracotta-700">{{ error }}</p>
       <UButton class="mt-6" color="neutral" variant="outline" @click="openChat">گفتگو با ارائه‌دهنده</UButton>
+
+      <section v-if="booking.canReview" class="mt-10 border-t border-ink-200 pt-8">
+        <h2 class="text-lg font-medium">نظر شما</h2>
+        <p class="mt-2 text-sm leading-7 text-ink-600">امتیاز واقعی پس از اتمام خدمت. هر بُعد از ۱ تا ۵.</p>
+        <div class="mt-5 space-y-4">
+          <div v-for="dim in REVIEW_DIMENSIONS" :key="dim">
+            <p class="text-sm">{{ REVIEW_DIMENSION_LABELS[dim] }}</p>
+            <div class="mt-1 flex gap-2">
+              <button
+                v-for="n in 5"
+                :key="n"
+                type="button"
+                class="h-8 w-8 text-sm"
+                :class="reviewForm[dim] >= n ? 'text-terracotta-600' : 'text-ink-300'"
+                @click="setScore(dim, n)"
+              >
+                {{ n }}
+              </button>
+            </div>
+          </div>
+          <UTextarea v-model="reviewForm.comment" class="w-full" placeholder="تجربه‌تان را بنویسید" />
+          <p v-if="reviewError" class="text-sm text-terracotta-700">{{ reviewError }}</p>
+          <UButton :loading="reviewPending" @click="submitReview">ثبت نظر</UButton>
+        </div>
+      </section>
+      <section v-else-if="booking.review" class="mt-10 border-t border-ink-200 pt-8">
+        <h2 class="text-lg font-medium">نظر ثبت‌شده</h2>
+        <p class="mt-2 text-sm">کل تجربه: {{ booking.review.overall }} از ۵</p>
+        <p class="mt-2 text-sm leading-7 text-ink-700">{{ booking.review.comment }}</p>
+      </section>
 
       <div class="mt-8 space-y-3">
         <UButton

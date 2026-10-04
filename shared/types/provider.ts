@@ -1,4 +1,5 @@
 import type { PricingType, ServiceCategorySlug } from '../constants/providers'
+import type { ProviderRatingSummary } from './review'
 
 export interface ServiceCategory {
   id: string
@@ -49,4 +50,6 @@ export interface ProviderProfile {
 
 export interface PublicProvider extends ProviderProfile {
   services: ProviderService[]
+  rating: ProviderRatingSummary
+  favorited: boolean
 }

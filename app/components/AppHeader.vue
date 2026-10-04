@@ -28,6 +28,7 @@ async function logout() {
         <NuxtLink to="/providers" class="hover:text-ink-900">ارائه‌دهندگان</NuxtLink>
         <NuxtLink to="/#how" class="hover:text-ink-900">چطور کار می‌کند</NuxtLink>
         <NuxtLink v-if="loggedIn" to="/pets" class="hover:text-ink-900">حیوانات من</NuxtLink>
+        <NuxtLink v-if="loggedIn" to="/favorites" class="hover:text-ink-900">ذخیره‌ها</NuxtLink>
         <NuxtLink v-if="loggedIn" to="/bookings" class="hover:text-ink-900">رزروها</NuxtLink>
         <NuxtLink v-if="loggedIn" to="/inbox" class="hover:text-ink-900">پیام‌ها</NuxtLink>
         <NuxtLink v-if="loggedIn" to="/notifications" class="hover:text-ink-900">اعلان‌ها</NuxtLink>
@@ -61,6 +62,7 @@ async function logout() {
         <NuxtLink to="/providers" @click="open = false">ارائه‌دهندگان</NuxtLink>
         <NuxtLink to="/#how" @click="open = false">چطور کار می‌کند</NuxtLink>
         <NuxtLink v-if="loggedIn" to="/pets" @click="open = false">حیوانات من</NuxtLink>
+        <NuxtLink v-if="loggedIn" to="/favorites" @click="open = false">ذخیره‌ها</NuxtLink>
         <NuxtLink v-if="loggedIn" to="/bookings" @click="open = false">رزروها</NuxtLink>
         <NuxtLink v-if="loggedIn" to="/inbox" @click="open = false">پیام‌ها</NuxtLink>
         <NuxtLink v-if="loggedIn" to="/notifications" @click="open = false">اعلان‌ها</NuxtLink>

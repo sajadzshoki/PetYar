@@ -113,7 +113,17 @@ export const searchService = {
             LIMIT 3
           ) s
         ) AS service_titles,
-        ${dist} AS distance_km
+        ${dist} AS distance_km,
+        (
+          SELECT AVG(r.overall)::double precision
+          FROM reviews r
+          WHERE r.provider_id = p.id
+        ) AS rating_avg,
+        (
+          SELECT COUNT(*)::int
+          FROM reviews r
+          WHERE r.provider_id = p.id
+        ) AS review_count
       FROM providers p
       WHERE ${where}
       ORDER BY ${order}
@@ -133,6 +143,8 @@ export const searchService = {
         minPrice: num(r.min_price),
         serviceTitles: asStringArray(r.service_titles),
         distanceKm: num(r.distance_km),
+        ratingAverage: num(r.rating_avg),
+        reviewCount: Number(r.review_count || 0),
       }
     })
 

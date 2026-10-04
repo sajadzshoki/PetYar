@@ -1,6 +1,6 @@
 # PetYar (پت‌یار)
 
-Iranian pet-services marketplace. **Phase 08** adds conversations, messages, and in-app notifications. Reviews, admin, and realtime sockets are intentionally not implemented.
+Iranian pet-services marketplace. **Phase 09** adds reviews, ratings, and favorites on completed bookings. Admin, verification badges, and realtime sockets are intentionally not implemented.
 
 ## Architecture
 
@@ -132,6 +132,12 @@ npm run db:studio
 - Persistent notifications for booking request/accept/reject/cancel, payment result, new message, and review-available (after complete). Read/unread APIs under `/api/notifications`.
 - No WebSockets. Domain events persist; SSE can subscribe later without rewriting services.
 - Pages: `/inbox`, `/inbox/:id`, `/notifications`.
+
+## Reviews and trust (phase 09)
+
+- One review per **completed** booking owned by the session user. Scores: overall, communication, quality, punctuality, care (1–5) plus a written comment. No edit/delete APIs.
+- Aggregates (`AVG`) are computed on the server. Public profile and search show average and count only when reviews exist — never seeded or invented.
+- Favorites: unique `(user, provider)`. Pages `/favorites`. No verification badges.
 
 ## Module boundaries
 

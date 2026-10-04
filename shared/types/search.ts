@@ -12,6 +12,8 @@ export interface ProviderSearchHit {
   minPrice: number | null
   serviceTitles: string[]
   distanceKm: number | null
+  ratingAverage: number | null
+  reviewCount: number
 }
 
 export interface ServiceSearchHit {

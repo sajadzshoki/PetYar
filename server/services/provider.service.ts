@@ -11,6 +11,7 @@ import { logger } from '../utils/logger'
 import { MAX_GALLERY_IMAGES } from '../../shared/constants/providers'
 import { toSessionUser } from './profile.service'
 import type { SessionUser } from '../../shared/types/user'
+import { reviewService } from './review.service'
 
 function emptyToNull(value?: string | null) {
   if (!value) return null
@@ -228,18 +229,22 @@ export const providerService = {
     return result
   },
 
-  async getPublic(id: string): Promise<PublicProvider> {
+  async getPublic(id: string, viewerId?: string | null): Promise<PublicProvider> {
     const db = getDb()
     const [row] = await db.select().from(providers).where(eq(providers.id, id)).limit(1)
     if (!row || !row.isActive) throw notFound('ارائه‌دهنده یافت نشد')
-    const [gallery, services, names] = await Promise.all([
+    const [gallery, services, names, rating, favorited] = await Promise.all([
       loadGallery(row.id),
       db.select().from(providerServices).where(and(eq(providerServices.providerId, row.id), eq(providerServices.isActive, true))).orderBy(desc(providerServices.createdAt)),
       categoryMap(),
+      reviewService.summaryForProvider(row.id),
+      viewerId ? reviewService.isFavorite(viewerId, row.id) : Promise.resolve(false),
     ])
     return {
       ...toProfile(row, gallery),
       services: services.map(s => toService(s, names.get(s.categoryId) || '')),
+      rating,
+      favorited,
     }
   },
 

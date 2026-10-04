@@ -1,6 +1,7 @@
 import type { BookingStatus, CancelledBy } from '../constants/bookings'
 import type { PricingType } from '../constants/providers'
 import type { Payment } from './payment'
+import type { Review } from './review'
 
 export interface Booking {
   id: string
@@ -30,6 +31,8 @@ export interface Booking {
   createdAt: string
   updatedAt: string
   payment: Payment | null
+  review: Review | null
+  canReview: boolean
 }
 
 export interface BookingQuote {

@@ -232,7 +232,7 @@ watch(() => route.query, load, { immediate: true, deep: true })
       <AppState
         v-else-if="result && result.total === 0"
         title="نتیجه‌ای پیدا نشد"
-        description="عبارت یا فیلترها را تغییر دهید. هنوز رزرو و امتیاز در نتایج نیست."
+        description="عبارت یا فیلترها را تغییر دهید."
       >
         <UButton color="neutral" variant="outline" @click="router.replace('/providers')">پاک کردن فیلترها</UButton>
       </AppState>
@@ -248,6 +248,7 @@ watch(() => route.query, load, { immediate: true, deep: true })
               </div>
               <div class="min-w-0">
                 <h2 class="font-medium">{{ item.displayName }}</h2>
+                <p v-if="item.reviewCount" class="mt-1 text-sm text-ink-700">{{ item.ratingAverage }} از ۵ · {{ item.reviewCount }} نظر</p>
                 <p class="mt-1 text-sm text-ink-600">
                   {{ [item.city, item.district].filter(Boolean).join('، ') || item.serviceArea || 'محدوده اعلام نشده' }}
                 </p>

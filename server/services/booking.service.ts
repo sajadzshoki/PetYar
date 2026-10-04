@@ -21,6 +21,7 @@ import { paymentService } from './payment.service'
 import { parseIrr } from '../../shared/utils/money'
 import { messagingService } from './messaging.service'
 import { notificationService } from './notification.service'
+import { reviewService } from './review.service'
 
 type Tx = Parameters<Parameters<ReturnType<typeof getDb>['transaction']>[0]>[0]
 
@@ -32,7 +33,7 @@ function money(value: string | null): number | null {
 
 function toBooking(
   row: BookingRow,
-  extras: { petName: string, providerName: string, serviceTitle: string, payment: Booking['payment'] },
+  extras: { petName: string, providerName: string, serviceTitle: string, payment: Booking['payment'], review: Booking['review'] },
 ): Booking {
   const unitPrice = money(row.unitPrice)
   return {
@@ -63,22 +64,26 @@ function toBooking(
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     payment: extras.payment,
+    review: extras.review,
+    canReview: row.status === 'COMPLETED' && !extras.review,
   }
 }
 
 async function hydrate(row: BookingRow): Promise<Booking> {
   const db = getDb()
-  const [[pet], [provider], [service], payment] = await Promise.all([
+  const [[pet], [provider], [service], payment, review] = await Promise.all([
     db.select({ name: pets.name }).from(pets).where(eq(pets.id, row.petId)).limit(1),
     db.select({ displayName: providers.displayName }).from(providers).where(eq(providers.id, row.providerId)).limit(1),
     db.select({ title: providerServices.title }).from(providerServices).where(eq(providerServices.id, row.serviceId)).limit(1),
     paymentService.getForBooking(row.id),
+    reviewService.getForBooking(row.id),
   ])
   return toBooking(row, {
     petName: pet?.name || '',
     providerName: provider?.displayName || '',
     serviceTitle: service?.title || '',
     payment,
+    review,
   })
 }
 

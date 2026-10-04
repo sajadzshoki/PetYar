@@ -1,14 +1,20 @@
 <script setup lang="ts">
 import type { PublicProvider } from '~~/shared/types/provider'
 import type { CalendarDay } from '~~/shared/types/availability'
+import type { Review } from '~~/shared/types/review'
 import { PRICING_TYPE_LABELS } from '~~/shared/constants/providers'
 import { WEEKDAY_LABELS } from '~~/shared/constants/availability'
+import { REVIEW_DIMENSION_LABELS } from '~~/shared/constants/reviews'
 import { apiErrorMessage } from '~/utils/api-error'
+
+const { loggedIn } = useUserSession()
 
 const route = useRoute()
 const id = computed(() => String(route.params.id))
 const provider = ref<PublicProvider | null>(null)
 const week = ref<CalendarDay[]>([])
+const reviews = ref<Review[]>([])
+const favPending = ref(false)
 const loading = ref(true)
 const error = ref('')
 
@@ -18,6 +24,13 @@ async function load() {
   try {
     const res = await $fetch<{ data: { provider: PublicProvider } }>(`/api/providers/${id.value}`)
     provider.value = res.data.provider
+    try {
+      const rev = await $fetch<{ data: { reviews: Review[] } }>(`/api/providers/${id.value}/reviews`)
+      reviews.value = rev.data.reviews
+    }
+    catch {
+      reviews.value = []
+    }
     const from = new Date().toISOString().slice(0, 10)
     const toDate = new Date()
     toDate.setUTCDate(toDate.getUTCDate() + 6)
@@ -47,6 +60,30 @@ function formatPrice(service: PublicProvider['services'][number]) {
 
 watch(id, load, { immediate: true })
 
+async function toggleFavorite() {
+  if (!provider.value || !loggedIn.value) {
+    await navigateTo('/login')
+    return
+  }
+  favPending.value = true
+  try {
+    if (provider.value.favorited) {
+      await $fetch(`/api/favorites/${provider.value.id}`, { method: 'DELETE' })
+      provider.value = { ...provider.value, favorited: false }
+    }
+    else {
+      await $fetch('/api/favorites', { method: 'POST', body: { providerId: provider.value.id } })
+      provider.value = { ...provider.value, favorited: true }
+    }
+  }
+  catch (err) {
+    error.value = apiErrorMessage(err, 'ذخیره نشد')
+  }
+  finally {
+    favPending.value = false
+  }
+}
+
 async function startChat() {
   if (!provider.value) return
   try {
@@ -74,12 +111,21 @@ async function startChat() {
         </div>
         <div class="mt-5 sm:mt-0">
           <h1 class="text-3xl font-semibold tracking-tight">{{ provider.displayName }}</h1>
+          <p v-if="provider.rating.reviewCount" class="mt-2 text-sm text-ink-700">
+            میانگین {{ provider.rating.overall }} از ۵ · {{ provider.rating.reviewCount }} نظر
+          </p>
+          <p v-else class="mt-2 text-sm text-ink-500">هنوز نظری ثبت نشده است.</p>
           <p class="mt-2 text-sm text-ink-600">
             {{ [provider.city, provider.district].filter(Boolean).join('، ') }}
           </p>
           <p v-if="provider.serviceArea" class="mt-1 text-sm text-ink-600">{{ provider.serviceArea }}</p>
           <p v-if="provider.serviceRadiusKm" class="mt-1 text-sm text-ink-500">شعاع خدمات: {{ provider.serviceRadiusKm }} کیلومتر</p>
-          <UButton class="mt-4" size="sm" color="neutral" variant="outline" @click="startChat">پیام به ارائه‌دهنده</UButton>
+          <div class="mt-4 flex flex-wrap gap-2">
+            <UButton size="sm" color="neutral" variant="outline" @click="startChat">پیام به ارائه‌دهنده</UButton>
+            <UButton size="sm" color="neutral" variant="ghost" :loading="favPending" @click="toggleFavorite">
+              {{ provider.favorited ? 'حذف از ذخیره‌ها' : 'ذخیره' }}
+            </UButton>
+          </div>
         </div>
       </div>
 
@@ -117,6 +163,21 @@ async function startChat() {
             <p class="mt-2 text-sm text-ink-700">{{ formatPrice(svc) }}</p>
             <p v-if="svc.durationMinutes" class="text-sm text-ink-500">مدت حدودی {{ svc.durationMinutes }} دقیقه · ظرفیت {{ svc.capacity }}</p>
             <NuxtLink :to="`/bookings/new?provider=${provider.id}&service=${svc.id}`" class="mt-2 inline-block text-sm text-terracotta-700">درخواست رزرو</NuxtLink>
+          </li>
+        </ul>
+      </section>
+
+      <section class="mt-10 border-t border-ink-200 pt-8">
+        <h2 class="text-lg font-medium">نظرها</h2>
+        <p v-if="provider.rating.reviewCount" class="mt-2 text-sm leading-7 text-ink-600">
+          ارتباط {{ provider.rating.communication }} · کیفیت {{ provider.rating.quality }} · وقت‌شناسی {{ provider.rating.punctuality }} · مراقبت {{ provider.rating.care }}
+        </p>
+        <p v-if="!reviews.length" class="mt-3 text-sm text-ink-500">نظری نیست. امتیاز ساختگی نمایش داده نمی‌شود.</p>
+        <ul v-else class="mt-4 divide-y divide-ink-100">
+          <li v-for="item in reviews" :key="item.id" class="py-4">
+            <p class="text-sm font-medium">{{ item.ownerName }} · {{ item.overall }} از ۵</p>
+            <p class="mt-2 text-sm leading-7 text-ink-700">{{ item.comment }}</p>
+            <p class="mt-1 text-xs text-ink-400">{{ REVIEW_DIMENSION_LABELS.care }} {{ item.care }}</p>
           </li>
         </ul>
       </section>
