@@ -1,0 +1,29 @@
+# Nuxt
+.nuxt
+.output
+.data
+.cache
+dist
+node_modules
+
+# Logs
+*.log
+npm-debug.log*
+
+# Env
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+
+# IDE
+.idea
+.vscode
+
+# Uploads (local object storage)
+storage/local
+
+# Drizzle
+drizzle/meta/_journal.json.bak
