@@ -1,6 +1,6 @@
 # PetYar (پت‌یار)
 
-Iranian pet-services marketplace. **Phase 04** adds server-side provider/service discovery (search, filters, sort, pagination). Bookings, payments, chat, reviews, and admin are intentionally not implemented.
+Iranian pet-services marketplace. **Phase 05** adds provider weekly hours, exceptions, and availability calculation. Bookings, payments, chat, reviews, and admin are intentionally not implemented.
 
 ## Architecture
 
@@ -93,13 +93,20 @@ npm run db:studio
 
 - Own profile: `GET/POST/PATCH /api/provider`, photo and gallery uploads. Creating a profile promotes `OWNER` → `PROVIDER`.
 - Services: `/api/provider/services` with activate/deactivate and delete. Categories are seeded (sitting, walking, boarding, grooming, taxi, vet, training, home care).
-- Public: `GET /api/providers/:id`, pages `/providers` and `/providers/:id`. No fake ratings. Availability is a placeholder only.
+- Public: `GET /api/providers/:id`, pages `/providers` and `/providers/:id`. No fake ratings.
 
 ## Search (phase 04)
 
 - `GET /api/providers` runs SQL search (never ships the full catalog to the client): `q`, `category`, `city`, `district`, `priceMin`/`priceMax`, `view=providers|services`, `sort`, `page`/`pageSize`, optional `lat`/`lng`/`radiusKm`.
 - Location uses Haversine on stored numeric coordinates and the provider service radius. PostGIS can replace that fragment later.
 - Query string on `/providers` is the source of truth. Facets: `GET /api/discovery/facets`.
+
+## Availability (phase 05)
+
+- Weekly rules and date exceptions (BLOCK / OPEN) under `/api/provider/availability/*`. Overlapping active windows are rejected. Times are wall-clock **Asia/Tehran**.
+- Calendar: `GET /api/provider/availability/calendar` and public `GET /api/providers/:id/calendar`.
+- `GET /api/providers/:id/availability-check?start=&end=` decides if a range is free. Booking reservations are a no-op hook (`reservedIntervals`) for phase 06.
+- UI: `/provider/availability`. Public profile shows the next week of slots.
 
 ## Module boundaries
 

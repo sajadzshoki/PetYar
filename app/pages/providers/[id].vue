@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import type { PublicProvider } from '~~/shared/types/provider'
+import type { CalendarDay } from '~~/shared/types/availability'
 import { PRICING_TYPE_LABELS } from '~~/shared/constants/providers'
+import { WEEKDAY_LABELS } from '~~/shared/constants/availability'
 import { apiErrorMessage } from '~/utils/api-error'
 
 const route = useRoute()
 const id = computed(() => String(route.params.id))
 const provider = ref<PublicProvider | null>(null)
+const week = ref<CalendarDay[]>([])
 const loading = ref(true)
 const error = ref('')
 
@@ -15,6 +18,17 @@ async function load() {
   try {
     const res = await $fetch<{ data: { provider: PublicProvider } }>(`/api/providers/${id.value}`)
     provider.value = res.data.provider
+    const from = new Date().toISOString().slice(0, 10)
+    const toDate = new Date()
+    toDate.setUTCDate(toDate.getUTCDate() + 6)
+    const to = toDate.toISOString().slice(0, 10)
+    try {
+      const cal = await $fetch<{ data: { days: CalendarDay[] } }>(`/api/providers/${id.value}/calendar`, { query: { from, to } })
+      week.value = cal.data.days
+    }
+    catch {
+      week.value = []
+    }
   }
   catch (err) {
     error.value = apiErrorMessage(err, 'این پرونده در دسترس نیست')
@@ -92,11 +106,19 @@ watch(id, load, { immediate: true })
       </section>
 
       <section class="mt-10 border-t border-ink-200 pt-8">
-        <h2 class="text-lg font-medium">دسترسی</h2>
-        <p class="mt-2 text-sm leading-7 text-ink-600">
-          تقویم زمان‌های خالی هنوز فعال نشده است. رزرو و پرداخت در فازهای بعدی می‌آید.
-        </p>
-        <p v-if="provider.latitude != null && provider.longitude != null" class="mt-2 text-sm text-ink-500" dir="ltr">
+        <h2 class="text-lg font-medium">ساعت‌های پیش‌رو</h2>
+        <p class="mt-2 text-sm leading-7 text-ink-600">وقت تهران. رزرو هنوز فعال نیست.</p>
+        <ul v-if="week.length" class="mt-4 divide-y divide-ink-100 text-sm">
+          <li v-for="day in week" :key="day.date" class="flex justify-between gap-3 py-2">
+            <span>{{ WEEKDAY_LABELS[day.weekday] }} · {{ day.date }}</span>
+            <span v-if="day.slots.length" class="text-ink-700">
+              {{ day.slots.map(s => `${s.startTime}–${s.endTime}`).join('، ') }}
+            </span>
+            <span v-else class="text-ink-400">تعطیل</span>
+          </li>
+        </ul>
+        <p v-else class="mt-3 text-sm text-ink-500">ساعت کاری اعلام نشده است.</p>
+        <p v-if="provider.latitude != null && provider.longitude != null" class="mt-4 text-sm text-ink-500" dir="ltr">
           {{ provider.latitude }}, {{ provider.longitude }}
         </p>
       </section>

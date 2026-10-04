@@ -3,8 +3,10 @@
  *
  * Phase 04 adds search indexes on providers/services.
  *
+ * Phase 05: weekly availability rules and date exceptions.
+ *
  * Future modules (do not implement yet):
- * availability, bookings, payments, reviews, messages,
+ * bookings, payments, reviews, messages,
  * notifications, favorites, reports, disputes, verification.
  */
 export { users, userRoleEnum } from './users'
@@ -26,3 +28,5 @@ export {
   pricingTypeEnum,
 } from './providers'
 export type { ProviderRow, GalleryRow, ProviderServiceRow, CategoryRow } from './providers'
+export { availabilityRules, availabilityExceptions, exceptionKindEnum } from './availability'
+export type { AvailabilityRuleRow, AvailabilityExceptionRow } from './availability'
