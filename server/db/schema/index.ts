@@ -7,10 +7,10 @@
  *
  * Phase 06: bookings.
  * Phase 07: payments, transactions, refunds (gateway abstraction).
+ * Phase 08: conversations, messages, in-app notifications.
  *
  * Future modules (do not implement yet):
- * reviews, messages,
- * notifications, favorites, reports, disputes workflow, verification.
+ * reviews, favorites, reports, disputes workflow, verification, realtime transport.
  */
 export { users, userRoleEnum } from './users'
 export type { UserRow, NewUserRow } from './users'
@@ -37,3 +37,7 @@ export { bookings, bookingStatusEnum, cancelledByEnum } from './bookings'
 export type { BookingRow } from './bookings'
 export { payments, paymentTransactions, paymentStatusEnum, paymentTransactionTypeEnum } from './payments'
 export type { PaymentRow, PaymentTransactionRow } from './payments'
+export { conversations, conversationParticipants, messages, conversationKindEnum } from './messaging'
+export type { ConversationRow, ParticipantRow, MessageRow } from './messaging'
+export { notifications, notificationTypeEnum } from './notifications'
+export type { NotificationRow } from './notifications'

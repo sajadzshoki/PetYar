@@ -36,6 +36,17 @@ async function load() {
 
 watch(id, load, { immediate: true })
 
+async function openChat() {
+  if (!booking.value) return
+  try {
+    const res = await $fetch<{ data: { conversation: { id: string } } }>(`/api/bookings/${booking.value.id}/conversation`)
+    await navigateTo(`/inbox/${res.data.conversation.id}`)
+  }
+  catch (err) {
+    error.value = apiErrorMessage(err, 'گفتگو باز نشد')
+  }
+}
+
 async function act(path: string, body?: Record<string, string>) {
   pending.value = true
   error.value = ''
@@ -129,6 +140,7 @@ function when(iso: string) {
       <p v-if="booking.providerNote" class="mt-2 text-sm leading-7 text-ink-600">پیام ارائه‌دهنده: {{ booking.providerNote }}</p>
       <p v-if="booking.cancellationReason" class="mt-2 text-sm text-ink-600">{{ booking.cancellationReason }}</p>
       <p v-if="error" class="mt-4 text-sm text-terracotta-700">{{ error }}</p>
+      <UButton class="mt-6" color="neutral" variant="outline" @click="openChat">گفتگو با ارائه‌دهنده</UButton>
 
       <div class="mt-8 space-y-3">
         <UButton

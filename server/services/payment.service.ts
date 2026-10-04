@@ -1,10 +1,11 @@
 import { and, desc, eq, sql } from 'drizzle-orm'
 import { getDb } from '../db/client'
-import { bookings, paymentTransactions, payments } from '../db/schema'
+import { bookings, paymentTransactions, payments, providers } from '../db/schema'
 import type { PaymentRow, PaymentTransactionRow } from '../db/schema/payments'
 import { getPaymentGateway, paymentFeeBps } from '../payments'
 import { conflict, forbidden, notFound, validationError } from '../utils/errors'
 import { logger } from '../utils/logger'
+import { notificationService } from './notification.service'
 import type { Payment, PaymentGatewayInfo, PaymentTransaction, PaymentWithTransactions } from '../../shared/types/payment'
 import type { PaymentStatus } from '../../shared/constants/payments'
 import { IRR_CURRENCY } from '../../shared/constants/payments'
@@ -278,6 +279,15 @@ export const paymentService = {
       updatedAt: new Date(),
     }).where(and(eq(payments.id, row.id), eq(payments.status, row.status))).returning()
     logger.info('payment_failed', { paymentId: row.id })
+    await notificationService.notify({
+      userId: row.ownerId,
+      type: 'PAYMENT_RESULT',
+      title: 'پرداخت ناموفق',
+      body: message,
+      href: `/payments/${row.id}`,
+      entityType: 'payment',
+      entityId: row.id,
+    })
     return toPayment(updated || { ...row, status: 'FAILED', errorMessage: message }, getPaymentGateway().configured)
   },
 
@@ -303,6 +313,28 @@ export const paymentService = {
       return updated
     })
     logger.info('payment_paid', { paymentId: paid.id, bookingId: paid.bookingId })
+    await notificationService.notify({
+      userId: paid.ownerId,
+      type: 'PAYMENT_RESULT',
+      title: 'پرداخت تأیید شد',
+      body: 'مبلغ رزرو با موفقیت ثبت شد.',
+      href: `/payments/${paid.id}`,
+      entityType: 'payment',
+      entityId: paid.id,
+    })
+    const db2 = getDb()
+    const [prov] = await db2.select({ userId: providers.userId }).from(providers).where(eq(providers.id, paid.providerId)).limit(1)
+    if (prov) {
+      await notificationService.notify({
+        userId: prov.userId,
+        type: 'PAYMENT_RESULT',
+        title: 'پرداخت رزرو دریافت شد',
+        body: 'پرداخت مشتری تأیید شد.',
+        href: `/provider/bookings/${paid.bookingId}`,
+        entityType: 'payment',
+        entityId: paid.id,
+      })
+    }
     return toPayment(paid, true)
   },
 

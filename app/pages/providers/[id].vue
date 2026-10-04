@@ -46,6 +46,20 @@ function formatPrice(service: PublicProvider['services'][number]) {
 }
 
 watch(id, load, { immediate: true })
+
+async function startChat() {
+  if (!provider.value) return
+  try {
+    const res = await $fetch<{ data: { conversation: { id: string } } }>('/api/conversations', {
+      method: 'POST',
+      body: { providerId: provider.value.id },
+    })
+    await navigateTo(`/inbox/${res.data.conversation.id}`)
+  }
+  catch (err) {
+    error.value = apiErrorMessage(err, 'گفتگو باز نشد. وارد حساب شوید.')
+  }
+}
 </script>
 
 <template>
@@ -65,6 +79,7 @@ watch(id, load, { immediate: true })
           </p>
           <p v-if="provider.serviceArea" class="mt-1 text-sm text-ink-600">{{ provider.serviceArea }}</p>
           <p v-if="provider.serviceRadiusKm" class="mt-1 text-sm text-ink-500">شعاع خدمات: {{ provider.serviceRadiusKm }} کیلومتر</p>
+          <UButton class="mt-4" size="sm" color="neutral" variant="outline" @click="startChat">پیام به ارائه‌دهنده</UButton>
         </div>
       </div>
 

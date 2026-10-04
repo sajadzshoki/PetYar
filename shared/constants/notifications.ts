@@ -1,0 +1,11 @@
+export const NOTIFICATION_TYPES = [
+  'BOOKING_REQUEST',
+  'BOOKING_ACCEPTED',
+  'BOOKING_REJECTED',
+  'BOOKING_CANCELLED',
+  'PAYMENT_RESULT',
+  'NEW_MESSAGE',
+  'REVIEW_AVAILABLE',
+] as const
+
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number]

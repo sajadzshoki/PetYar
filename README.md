@@ -1,6 +1,6 @@
 # PetYar (پت‌یار)
 
-Iranian pet-services marketplace. **Phase 07** adds payments (gateway abstraction, fees, payouts, refunds) on top of bookings. Chat, reviews, and admin are intentionally not implemented.
+Iranian pet-services marketplace. **Phase 08** adds conversations, messages, and in-app notifications. Reviews, admin, and realtime sockets are intentionally not implemented.
 
 ## Architecture
 
@@ -124,6 +124,14 @@ npm run db:studio
 - Owner: `POST /api/bookings/:id/pay` (idempotent per booking), `GET /api/payments/:id`, refund, callback via `/payments/return`.
 - Priced bookings cannot be confirmed/started until payment is PAID.
 - Refunds only after verified PAID and a real gateway refund; unconfigured gateway never marks REFUNDED.
+
+## Messaging and notifications (phase 08)
+
+- Conversations (`INQUIRY` before booking, `BOOKING` after) with participants, messages, read state, and image attachments via object storage.
+- Access is participant-only. `GET /api/conversations`, `POST /api/conversations`, thread + send + read + attachments.
+- Persistent notifications for booking request/accept/reject/cancel, payment result, new message, and review-available (after complete). Read/unread APIs under `/api/notifications`.
+- No WebSockets. Domain events persist; SSE can subscribe later without rewriting services.
+- Pages: `/inbox`, `/inbox/:id`, `/notifications`.
 
 ## Module boundaries
 

@@ -32,6 +32,17 @@ async function load() {
 
 watch(id, load, { immediate: true })
 
+async function openChat() {
+  if (!booking.value) return
+  try {
+    const res = await $fetch<{ data: { conversation: { id: string } } }>(`/api/bookings/${booking.value.id}/conversation`)
+    await navigateTo(`/inbox/${res.data.conversation.id}`)
+  }
+  catch (err) {
+    error.value = apiErrorMessage(err, 'گفتگو باز نشد')
+  }
+}
+
 async function act(action: string, body?: Record<string, string>) {
   if (!booking.value) return
   pending.value = true
@@ -79,6 +90,7 @@ function when(iso: string) {
       <p v-else class="mt-2 text-xs text-ink-500">تا پرداخت تأیید نشود، خدمت را شروع نکنید.</p>
       <p v-if="booking.ownerNote" class="mt-4 text-sm leading-7">یادداشت صاحب: {{ booking.ownerNote }}</p>
       <p v-if="error" class="mt-4 text-sm text-terracotta-700">{{ error }}</p>
+      <UButton class="mt-4" color="neutral" variant="outline" @click="openChat">گفتگو با صاحب</UButton>
 
       <div class="mt-8 flex flex-col gap-3">
         <UButton v-if="booking.status === 'PENDING'" :loading="pending" @click="act('accept', { note })">پذیرش</UButton>

@@ -1,7 +1,8 @@
 import { getSessionUser } from '../../utils/authorization'
 import { AppError, forbidden, notFound } from '../../utils/errors'
 import { getObjectStorage } from '../../storage'
-import { canAccessMedia, contentTypeFromKey, isPublicMedia } from '../../utils/media'
+import { canAccessMedia, contentTypeFromKey, isMessageMedia, isPublicMedia } from '../../utils/media'
+import { messagingService } from '../../services/messaging.service'
 import { HTTP_STATUS } from '../../../shared/constants/api'
 
 export default defineEventHandler(async (event) => {
@@ -13,6 +14,7 @@ export default defineEventHandler(async (event) => {
     if (!isPublicMedia(key)) {
       const session = await getSessionUser(event as never)
       if (!session || !canAccessMedia(session.id, key)) throw forbidden()
+      if (isMessageMedia(key) && !await messagingService.canAccessAttachment(session.id, key)) throw forbidden()
     }
 
     const body = await getObjectStorage().get(key)

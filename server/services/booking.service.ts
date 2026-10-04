@@ -19,6 +19,8 @@ import type { BookingCreateInput } from '../../shared/validation/booking'
 import { quotePrice } from '../../shared/utils/pricing'
 import { paymentService } from './payment.service'
 import { parseIrr } from '../../shared/utils/money'
+import { messagingService } from './messaging.service'
+import { notificationService } from './notification.service'
 
 type Tx = Parameters<Parameters<ReturnType<typeof getDb>['transaction']>[0]>[0]
 
@@ -221,6 +223,19 @@ export const bookingService = {
     })
 
     logger.info('booking_created', { bookingId: created.id, ownerId: userId, providerId: created.providerId })
+    await messagingService.ensureForBooking(created.id)
+    const [prov] = await db.select({ userId: providers.userId }).from(providers).where(eq(providers.id, created.providerId)).limit(1)
+    if (prov) {
+      await notificationService.notify({
+        userId: prov.userId,
+        type: 'BOOKING_REQUEST',
+        title: 'درخواست رزرو جدید',
+        body: 'یک صاحب حیوان درخواست رزرو فرستاده است.',
+        href: `/provider/bookings/${created.id}`,
+        entityType: 'booking',
+        entityId: created.id,
+      })
+    }
     return hydrate(created)
   },
 
@@ -341,6 +356,20 @@ export const bookingService = {
     if (!updated) throw conflict('وضعیت رزرو تغییر کرده است')
     await paymentService.refundForBookingCancel(row)
     logger.info('booking_cancelled', { bookingId: row.id, by })
+    const [prov] = await db.select({ userId: providers.userId }).from(providers).where(eq(providers.id, row.providerId)).limit(1)
+    const target = by === 'OWNER' ? prov?.userId : row.ownerId
+    const href = by === 'OWNER' ? `/provider/bookings/${row.id}` : `/bookings/${row.id}`
+    if (target) {
+      await notificationService.notify({
+        userId: target,
+        type: 'BOOKING_CANCELLED',
+        title: 'رزرو لغو شد',
+        body: reason,
+        href,
+        entityType: 'booking',
+        entityId: row.id,
+      })
+    }
     return hydrate(updated)
   },
 
@@ -384,6 +413,39 @@ export const bookingService = {
     }).where(and(eq(bookings.id, id), eq(bookings.status, row.status))).returning()
     if (!updated) throw conflict('وضعیت رزرو تغییر کرده است')
     logger.info('booking_transition', { bookingId: id, to })
+    if (to === 'ACCEPTED') {
+      await notificationService.notify({
+        userId: updated.ownerId,
+        type: 'BOOKING_ACCEPTED',
+        title: 'رزرو پذیرفته شد',
+        body: 'ارائه‌دهنده درخواست شما را پذیرفت.',
+        href: `/bookings/${updated.id}`,
+        entityType: 'booking',
+        entityId: updated.id,
+      })
+    }
+    else if (to === 'REJECTED') {
+      await notificationService.notify({
+        userId: updated.ownerId,
+        type: 'BOOKING_REJECTED',
+        title: 'رزرو رد شد',
+        body: extra.cancellationReason || extra.providerNote || 'ارائه‌دهنده این درخواست را نپذیرفت.',
+        href: `/bookings/${updated.id}`,
+        entityType: 'booking',
+        entityId: updated.id,
+      })
+    }
+    else if (to === 'COMPLETED') {
+      await notificationService.notify({
+        userId: updated.ownerId,
+        type: 'REVIEW_AVAILABLE',
+        title: 'می‌توانید نظر بدهید',
+        body: 'خدمت تمام شد. ثبت نظر به‌زودی فعال می‌شود.',
+        href: `/bookings/${updated.id}`,
+        entityType: 'booking',
+        entityId: updated.id,
+      })
+    }
     return hydrate(updated)
   },
 }

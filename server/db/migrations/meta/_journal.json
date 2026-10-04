@@ -50,6 +50,13 @@
       "when": 1728518400000,
       "tag": "0006_phase07_payments",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1728604800000,
+      "tag": "0007_phase08_messaging",
+      "breakpoints": true
     }
   ]
 }
