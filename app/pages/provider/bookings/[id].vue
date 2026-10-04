@@ -72,7 +72,11 @@ function when(iso: string) {
       <p class="mt-3 text-sm leading-7">{{ when(booking.startAt) }} تا {{ when(booking.endAt) }}</p>
       <p class="mt-2 text-sm font-medium">{{ BOOKING_STATUS_LABELS[booking.status] }}</p>
       <p class="mt-2 text-sm">{{ money(booking) }}</p>
-      <p class="mt-2 text-xs text-ink-500">پرداخت در این فاز وجود ندارد.</p>
+      <p v-if="booking.payment?.status === 'PAID' || booking.payment?.status === 'PARTIALLY_REFUNDED'" class="mt-2 text-sm text-ink-700">
+        سهم شما پس از کارمزد: {{ new Intl.NumberFormat('fa-IR').format(booking.payment.providerPayout) }} تومان
+      </p>
+      <p v-else-if="booking.payment" class="mt-2 text-sm text-ink-500">وضعیت پرداخت: {{ booking.payment.status }}</p>
+      <p v-else class="mt-2 text-xs text-ink-500">تا پرداخت تأیید نشود، خدمت را شروع نکنید.</p>
       <p v-if="booking.ownerNote" class="mt-4 text-sm leading-7">یادداشت صاحب: {{ booking.ownerNote }}</p>
       <p v-if="error" class="mt-4 text-sm text-terracotta-700">{{ error }}</p>
 

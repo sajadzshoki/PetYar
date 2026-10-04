@@ -39,6 +39,10 @@ export default defineNuxtConfig({
       bucket: process.env.MINIO_BUCKET || 'petyar',
     },
     logLevel: process.env.LOG_LEVEL || 'info',
+    paymentDriver: process.env.PAYMENT_DRIVER || 'zarinpal',
+    zarinpalMerchantId: process.env.ZARINPAL_MERCHANT_ID || '',
+    zarinpalSandbox: process.env.ZARINPAL_SANDBOX === 'true',
+    paymentPlatformFeeBps: Number(process.env.PAYMENT_PLATFORM_FEE_BPS || 1000),
     public: {
       appName: process.env.NUXT_PUBLIC_APP_NAME || 'PetYar',
       appUrl: process.env.NUXT_PUBLIC_APP_URL || 'http://localhost:3000',

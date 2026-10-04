@@ -39,7 +39,7 @@ function when(b: Booking) {
 <template>
   <div class="mx-auto max-w-2xl px-4 py-12">
     <h1 class="text-2xl font-semibold">رزروهای من</h1>
-    <p class="mt-2 text-sm leading-7 text-ink-600">پرداخت هنوز فعال نیست؛ مبلغ فقط برآورد خدمت است.</p>
+    <p class="mt-2 text-sm leading-7 text-ink-600">مبلغ رزرو روی سرور حساب می‌شود. پرداخت فقط با درگاه پیکربندی‌شده قطعی می‌شود.</p>
     <AppState v-if="loading" title="در حال بارگذاری…" />
     <AppState v-else-if="error" :title="error" />
     <p v-else-if="!items.length" class="mt-8 text-sm text-ink-500">رزروی ندارید.</p>

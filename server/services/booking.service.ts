@@ -17,6 +17,8 @@ import type { PricingType } from '../../shared/constants/providers'
 import type { Booking, BookingQuote } from '../../shared/types/booking'
 import type { BookingCreateInput } from '../../shared/validation/booking'
 import { quotePrice } from '../../shared/utils/pricing'
+import { paymentService } from './payment.service'
+import { parseIrr } from '../../shared/utils/money'
 
 type Tx = Parameters<Parameters<ReturnType<typeof getDb>['transaction']>[0]>[0]
 
@@ -28,7 +30,7 @@ function money(value: string | null): number | null {
 
 function toBooking(
   row: BookingRow,
-  extras: { petName: string, providerName: string, serviceTitle: string },
+  extras: { petName: string, providerName: string, serviceTitle: string, payment: Booking['payment'] },
 ): Booking {
   const unitPrice = money(row.unitPrice)
   return {
@@ -58,21 +60,33 @@ function toBooking(
     cancelledAt: row.cancelledAt ? row.cancelledAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+    payment: extras.payment,
   }
 }
 
 async function hydrate(row: BookingRow): Promise<Booking> {
   const db = getDb()
-  const [[pet], [provider], [service]] = await Promise.all([
+  const [[pet], [provider], [service], payment] = await Promise.all([
     db.select({ name: pets.name }).from(pets).where(eq(pets.id, row.petId)).limit(1),
     db.select({ displayName: providers.displayName }).from(providers).where(eq(providers.id, row.providerId)).limit(1),
     db.select({ title: providerServices.title }).from(providerServices).where(eq(providerServices.id, row.serviceId)).limit(1),
+    paymentService.getForBooking(row.id),
   ])
   return toBooking(row, {
     petName: pet?.name || '',
     providerName: provider?.displayName || '',
     serviceTitle: service?.title || '',
+    payment,
   })
+}
+
+async function requirePaidIfPriced(row: BookingRow) {
+  const amount = parseIrr(row.totalAmount)
+  if (amount == null || amount <= 0) return
+  const payment = await paymentService.getForBooking(row.id)
+  if (!paymentService.isSettled(payment, amount)) {
+    throw conflict('تا پرداخت تأیید نشود این مرحله ممکن نیست')
+  }
 }
 
 function assertTransition(from: BookingStatus, to: BookingStatus, allowed: BookingStatus[]) {
@@ -251,14 +265,23 @@ export const bookingService = {
   },
 
   async confirmAsProvider(userId: string, id: string) {
+    const db = getDb()
+    const [row] = await db.select().from(bookings).where(eq(bookings.id, id)).limit(1)
+    if (row) await requirePaidIfPriced(row)
     return this.providerTransition(userId, id, 'CONFIRMED', ['ACCEPTED'])
   },
 
   async confirmAsOwner(userId: string, id: string) {
+    const db = getDb()
+    const [row] = await db.select().from(bookings).where(eq(bookings.id, id)).limit(1)
+    if (row) await requirePaidIfPriced(row)
     return this.ownerTransition(userId, id, 'CONFIRMED', ['ACCEPTED'])
   },
 
   async start(userId: string, id: string) {
+    const db = getDb()
+    const [row] = await db.select().from(bookings).where(eq(bookings.id, id)).limit(1)
+    if (row) await requirePaidIfPriced(row)
     return this.providerTransition(userId, id, 'IN_PROGRESS', ['CONFIRMED'])
   },
 
@@ -316,6 +339,7 @@ export const bookingService = {
       updatedAt: new Date(),
     }).where(and(eq(bookings.id, row.id), eq(bookings.status, row.status))).returning()
     if (!updated) throw conflict('وضعیت رزرو تغییر کرده است')
+    await paymentService.refundForBookingCancel(row)
     logger.info('booking_cancelled', { bookingId: row.id, by })
     return hydrate(updated)
   },

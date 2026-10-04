@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { Booking } from '~~/shared/types/booking'
+import type { Payment } from '~~/shared/types/payment'
 import { BOOKING_STATUS_LABELS } from '~~/shared/constants/bookings'
+import { PAYMENT_STATUS_LABELS } from '~~/shared/constants/payments'
 import { apiErrorMessage } from '~/utils/api-error'
 
 definePageMeta({ middleware: 'auth' })
@@ -12,6 +14,9 @@ const loading = ref(true)
 const pending = ref(false)
 const error = ref('')
 const reason = ref('')
+const payPending = ref(false)
+const payError = ref('')
+const gatewayReason = ref('')
 
 async function load() {
   loading.value = true
@@ -47,8 +52,51 @@ async function act(path: string, body?: Record<string, string>) {
 }
 
 function money(b: Booking) {
-  if (b.negotiable || b.totalAmount == null) return 'توافقی — پرداخت در پت‌یار فعال نیست'
-  return `${new Intl.NumberFormat('fa-IR').format(b.totalAmount)} تومان (پرداخت هنوز انجام نمی‌شود)`
+  if (b.negotiable || b.totalAmount == null) return 'توافقی — پرداخت آنلاین لازم نیست'
+  return `${new Intl.NumberFormat('fa-IR').format(b.totalAmount)} تومان`
+}
+
+const canPay = computed(() => {
+  const b = booking.value
+  if (!b || b.negotiable || b.totalAmount == null) return false
+  if (!['ACCEPTED', 'CONFIRMED'].includes(b.status)) return false
+  const st = b.payment?.status
+  return !st || st === 'PENDING' || st === 'FAILED' || st === 'PROCESSING'
+})
+
+async function startPay() {
+  if (!booking.value) return
+  payPending.value = true
+  payError.value = ''
+  gatewayReason.value = ''
+  try {
+    const res = await $fetch<{ data: { payment: Payment, gateway: { configured: boolean, reason?: string } } }>(
+      `/api/bookings/${booking.value.id}/pay`,
+      { method: 'POST' },
+    )
+    const payment = res.data.payment
+    if (payment.redirectUrl) {
+      window.location.href = payment.redirectUrl
+      return
+    }
+    if (!res.data.gateway.configured) {
+      gatewayReason.value = res.data.gateway.reason || payment.errorMessage || 'درگاه پرداخت پیکربندی نشده است'
+      await load()
+      return
+    }
+    if (payment.status === 'FAILED') {
+      payError.value = payment.errorMessage || 'پرداخت ناموفق بود'
+      await load()
+      return
+    }
+    await navigateTo(`/payments/${payment.id}`)
+  }
+  catch (err) {
+    payError.value = apiErrorMessage(err, 'شروع پرداخت ناموفق بود')
+  }
+  finally {
+    payPending.value = false
+  }
 }
 
 function when(iso: string) {
@@ -70,6 +118,13 @@ function when(iso: string) {
       </p>
       <p class="mt-3 text-sm font-medium">{{ BOOKING_STATUS_LABELS[booking.status] }}</p>
       <p class="mt-2 text-sm text-ink-700">{{ money(booking) }}</p>
+      <p v-if="booking.payment" class="mt-1 text-sm text-ink-600">
+        پرداخت: {{ PAYMENT_STATUS_LABELS[booking.payment.status] }}
+        <NuxtLink :to="`/payments/${booking.payment.id}`" class="mr-2 text-terracotta-700">جزئیات</NuxtLink>
+      </p>
+      <p v-if="gatewayReason" class="mt-3 text-sm leading-7 text-terracotta-700">{{ gatewayReason }}</p>
+      <p v-if="payError" class="mt-3 text-sm text-terracotta-700">{{ payError }}</p>
+      <UButton v-if="canPay" class="mt-4" :loading="payPending" @click="startPay">پرداخت</UButton>
       <p v-if="booking.ownerNote" class="mt-4 text-sm leading-7 text-ink-600">یادداشت شما: {{ booking.ownerNote }}</p>
       <p v-if="booking.providerNote" class="mt-2 text-sm leading-7 text-ink-600">پیام ارائه‌دهنده: {{ booking.providerNote }}</p>
       <p v-if="booking.cancellationReason" class="mt-2 text-sm text-ink-600">{{ booking.cancellationReason }}</p>

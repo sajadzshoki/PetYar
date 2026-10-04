@@ -1,6 +1,6 @@
 # PetYar (پت‌یار)
 
-Iranian pet-services marketplace. **Phase 06** adds the booking engine (request → accept/reject → confirm → in progress → complete, plus cancel/dispute). Payments, chat, reviews, and admin are intentionally not implemented.
+Iranian pet-services marketplace. **Phase 07** adds payments (gateway abstraction, fees, payouts, refunds) on top of bookings. Chat, reviews, and admin are intentionally not implemented.
 
 ## Architecture
 
@@ -112,9 +112,18 @@ npm run db:studio
 
 - Owner: `POST /api/bookings`, `GET /api/bookings`, `GET /api/bookings/:id`, cancel / confirm / dispute. Quote: `GET /api/bookings/quote`.
 - Provider: `GET /api/provider/bookings`, accept / reject / confirm / start / complete / cancel / dispute.
-- Price is computed on the server (`quotePrice`). Client totals are ignored. No payment status.
+- Price is computed on the server (`quotePrice`). Client totals are ignored.
 - Overlaps use a transaction + advisory lock. Pets must belong to the session owner; services to the provider.
 - Pages: `/bookings`, `/bookings/new`, `/bookings/:id`, `/provider/bookings`.
+
+## Payments (phase 07)
+
+- Tables: `payments`, `payment_transactions`. Statuses: PENDING, PROCESSING, PAID, FAILED, REFUNDED, PARTIALLY_REFUNDED.
+- Amounts, platform fee (`PAYMENT_PLATFORM_FEE_BPS`), and provider payout are integer IRR, computed on the server.
+- Gateway interface (`server/payments`): Zarinpal when `ZARINPAL_MERCHANT_ID` is set; otherwise an **unavailable** adapter. No fake PAID.
+- Owner: `POST /api/bookings/:id/pay` (idempotent per booking), `GET /api/payments/:id`, refund, callback via `/payments/return`.
+- Priced bookings cannot be confirmed/started until payment is PAID.
+- Refunds only after verified PAID and a real gateway refund; unconfigured gateway never marks REFUNDED.
 
 ## Module boundaries
 
