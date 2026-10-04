@@ -101,13 +101,14 @@ watch(id, load, { immediate: true })
             <p v-if="svc.description" class="mt-1 text-sm leading-7 text-ink-600">{{ svc.description }}</p>
             <p class="mt-2 text-sm text-ink-700">{{ formatPrice(svc) }}</p>
             <p v-if="svc.durationMinutes" class="text-sm text-ink-500">مدت حدودی {{ svc.durationMinutes }} دقیقه · ظرفیت {{ svc.capacity }}</p>
+            <NuxtLink :to="`/bookings/new?provider=${provider.id}&service=${svc.id}`" class="mt-2 inline-block text-sm text-terracotta-700">درخواست رزرو</NuxtLink>
           </li>
         </ul>
       </section>
 
       <section class="mt-10 border-t border-ink-200 pt-8">
         <h2 class="text-lg font-medium">ساعت‌های پیش‌رو</h2>
-        <p class="mt-2 text-sm leading-7 text-ink-600">وقت تهران. رزرو هنوز فعال نیست.</p>
+        <p class="mt-2 text-sm leading-7 text-ink-600">وقت تهران. بازه‌های رزروشده در تقویم کم می‌شوند.</p>
         <ul v-if="week.length" class="mt-4 divide-y divide-ink-100 text-sm">
           <li v-for="day in week" :key="day.date" class="flex justify-between gap-3 py-2">
             <span>{{ WEEKDAY_LABELS[day.weekday] }} · {{ day.date }}</span>

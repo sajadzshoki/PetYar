@@ -200,6 +200,8 @@ onMounted(load)
         <span class="mx-2 text-ink-300">·</span>
         <NuxtLink to="/provider/availability" class="text-sm text-terracotta-700">تقویم و ساعت کاری</NuxtLink>
         <span class="mx-2 text-ink-300">·</span>
+        <NuxtLink to="/provider/bookings" class="text-sm text-terracotta-700">درخواست‌های رزرو</NuxtLink>
+        <span class="mx-2 text-ink-300">·</span>
         <NuxtLink :to="`/providers/${provider.id}`" class="text-sm text-ink-600">نمایش عمومی</NuxtLink>
       </p>
     </section>

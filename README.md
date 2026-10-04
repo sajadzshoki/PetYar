@@ -1,6 +1,6 @@
 # PetYar (پت‌یار)
 
-Iranian pet-services marketplace. **Phase 05** adds provider weekly hours, exceptions, and availability calculation. Bookings, payments, chat, reviews, and admin are intentionally not implemented.
+Iranian pet-services marketplace. **Phase 06** adds the booking engine (request → accept/reject → confirm → in progress → complete, plus cancel/dispute). Payments, chat, reviews, and admin are intentionally not implemented.
 
 ## Architecture
 
@@ -105,8 +105,16 @@ npm run db:studio
 
 - Weekly rules and date exceptions (BLOCK / OPEN) under `/api/provider/availability/*`. Overlapping active windows are rejected. Times are wall-clock **Asia/Tehran**.
 - Calendar: `GET /api/provider/availability/calendar` and public `GET /api/providers/:id/calendar`.
-- `GET /api/providers/:id/availability-check?start=&end=` decides if a range is free. Booking reservations are a no-op hook (`reservedIntervals`) for phase 06.
+- `GET /api/providers/:id/availability-check?start=&end=` decides if a range is free. Active bookings occupy calendar slots via `reservedIntervals`.
 - UI: `/provider/availability`. Public profile shows the next week of slots.
+
+## Bookings (phase 06)
+
+- Owner: `POST /api/bookings`, `GET /api/bookings`, `GET /api/bookings/:id`, cancel / confirm / dispute. Quote: `GET /api/bookings/quote`.
+- Provider: `GET /api/provider/bookings`, accept / reject / confirm / start / complete / cancel / dispute.
+- Price is computed on the server (`quotePrice`). Client totals are ignored. No payment status.
+- Overlaps use a transaction + advisory lock. Pets must belong to the session owner; services to the provider.
+- Pages: `/bookings`, `/bookings/new`, `/bookings/:id`, `/provider/bookings`.
 
 ## Module boundaries
 

@@ -1,11 +1,12 @@
-import { and, asc, eq, gte, lte, ne } from 'drizzle-orm'
+import { and, asc, eq, gte, inArray, lte, ne } from 'drizzle-orm'
 import { getDb } from '../db/client'
-import { availabilityExceptions, availabilityRules } from '../db/schema'
+import { availabilityExceptions, availabilityRules, bookings } from '../db/schema'
 import type { AvailabilityExceptionRow, AvailabilityRuleRow } from '../db/schema/availability'
 import { providerService } from './provider.service'
 import { conflict, notFound, validationError } from '../utils/errors'
 import { logger } from '../utils/logger'
 import { PROVIDER_TIMEZONE, type Weekday } from '../../shared/constants/availability'
+import { BOOKING_BUSY_STATUSES } from '../../shared/constants/bookings'
 import type { AvailabilityExceptionWriteInput, AvailabilityRuleWriteInput } from '../../shared/validation/availability'
 import type {
   AvailabilityCheck,
@@ -63,10 +64,29 @@ function slotsFromRanges(ranges: MinuteRange[]): TimeSlot[] {
 }
 
 /**
- * Reserved windows for a local date. Bookings (phase 06+) should append intervals here.
+ * Reserved windows for a local date from active bookings.
  */
-export async function reservedIntervals(_providerId: string, _localDate: string): Promise<MinuteRange[]> {
-  return []
+export async function reservedIntervals(providerId: string, localDate: string): Promise<MinuteRange[]> {
+  const db = getDb()
+  const dayStart = new Date(`${localDate}T00:00:00.000+03:30`)
+  const dayEnd = new Date(`${localDate}T23:59:59.999+03:30`)
+  const rows = await db.select({
+    startAt: bookings.startAt,
+    endAt: bookings.endAt,
+  }).from(bookings).where(and(
+    eq(bookings.providerId, providerId),
+    inArray(bookings.status, BOOKING_BUSY_STATUSES),
+  ))
+  const out: MinuteRange[] = []
+  for (const row of rows) {
+    if (row.endAt <= dayStart || row.startAt >= dayEnd) continue
+    const startLocal = zonedWallClock(row.startAt)
+    const endLocal = zonedWallClock(row.endAt)
+    const startMin = startLocal.date === localDate ? startLocal.hours * 60 + startLocal.minutes : 0
+    const endMin = endLocal.date === localDate ? endLocal.hours * 60 + endLocal.minutes : 24 * 60
+    if (endMin > startMin) out.push({ start: startMin, end: endMin })
+  }
+  return out
 }
 
 function assertNoOverlap(existing: MinuteRange[], candidate: MinuteRange, message: string) {

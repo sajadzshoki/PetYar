@@ -36,6 +36,13 @@
       "when": 1728345600000,
       "tag": "0004_phase05_availability",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1728432000000,
+      "tag": "0005_phase06_bookings",
+      "breakpoints": true
     }
   ]
 }

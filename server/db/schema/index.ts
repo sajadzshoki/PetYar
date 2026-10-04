@@ -5,9 +5,11 @@
  *
  * Phase 05: weekly availability rules and date exceptions.
  *
+ * Phase 06: bookings (no payments).
+ *
  * Future modules (do not implement yet):
- * bookings, payments, reviews, messages,
- * notifications, favorites, reports, disputes, verification.
+ * payments, reviews, messages,
+ * notifications, favorites, reports, disputes workflow, verification.
  */
 export { users, userRoleEnum } from './users'
 export type { UserRow, NewUserRow } from './users'
@@ -30,3 +32,5 @@ export {
 export type { ProviderRow, GalleryRow, ProviderServiceRow, CategoryRow } from './providers'
 export { availabilityRules, availabilityExceptions, exceptionKindEnum } from './availability'
 export type { AvailabilityRuleRow, AvailabilityExceptionRow } from './availability'
+export { bookings, bookingStatusEnum, cancelledByEnum } from './bookings'
+export type { BookingRow } from './bookings'
