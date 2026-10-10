@@ -1,6 +1,6 @@
 import { getSessionUser } from '../../utils/authorization'
 import { AppError, forbidden, notFound } from '../../utils/errors'
-import { getObjectStorage } from '../../storage'
+import { getObjectStorage } from '../../utils/object-storage'
 import { canAccessMedia, contentTypeFromKey, isMessageMedia, isPublicMedia } from '../../utils/media'
 import { messagingService } from '../../services/messaging.service'
 import { HTTP_STATUS } from '../../../shared/constants/api'

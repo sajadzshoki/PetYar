@@ -26,6 +26,10 @@ export default defineNuxtConfig({
   runtimeConfig: {
     session: {
       password: process.env.NUXT_SESSION_PASSWORD || '',
+      cookie: {
+        sameSite: 'lax',
+        secure: false,
+      },
     },
     databaseUrl: process.env.DATABASE_URL || process.env.NUXT_DATABASE_URL || '',
     storageDriver: process.env.STORAGE_DRIVER || 'local',
