@@ -20,7 +20,7 @@ withDefaults(defineProps<{
     class="inline-flex items-center gap-1 font-medium text-highlighted"
     :class="size === 'sm' ? 'text-sm' : 'text-base'"
   >
-    <UIcon name="i-lucide-star" class="size-4 fill-terracotta-400 text-terracotta-400" aria-hidden="true" />
+    <UIcon name="i-lucide-star" class="size-4 fill-terracotta-400 text-terracotta-400 dark:fill-terracotta-300 dark:text-terracotta-300" aria-hidden="true" />
     <span class="num">{{ formatRating(average) }}</span>
     <span class="font-normal text-muted">({{ formatNumber(count) }} نظر)</span>
   </span>

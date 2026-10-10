@@ -68,6 +68,14 @@ useHead({ title: 'حساب کاربری | پت‌یار' })
     <AppState v-else-if="loadError" variant="error" :title="loadError" retry @retry="load" />
 
     <form v-else class="space-y-5" @submit.prevent="save">
+      <div class="surface flex items-center justify-between gap-3 p-4">
+        <div class="min-w-0">
+          <p class="text-sm font-bold text-highlighted">حالت نمایش</p>
+          <p class="text-xs leading-5 text-muted">روشن یا تیره. انتخاب شما روی همین دستگاه می‌ماند.</p>
+        </div>
+        <ThemeToggle />
+      </div>
+
       <AppSection title="ورود">
         <dl class="text-sm">
           <dt class="text-xs text-muted">ایمیل</dt>

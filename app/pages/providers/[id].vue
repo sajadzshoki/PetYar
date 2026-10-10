@@ -209,7 +209,7 @@ useHead(() => ({ title: provider.value ? `${provider.value.displayName} | پت�
               :loading="favPending"
               :aria-pressed="provider.favorited"
               class="flex-1 sm:flex-none"
-              :ui="{ leadingIcon: provider.favorited ? 'fill-terracotta-500 text-terracotta-500' : '' }"
+              :ui="{ leadingIcon: provider.favorited ? 'fill-terracotta-500 text-terracotta-500 dark:fill-terracotta-300 dark:text-terracotta-300' : '' }"
               @click="toggleFavorite"
             >
               {{ provider.favorited ? 'ذخیره شد' : 'ذخیره' }}
@@ -289,7 +289,7 @@ useHead(() => ({ title: provider.value ? `${provider.value.displayName} | پت�
               <span class="block text-xs font-normal text-muted">{{ formatCalendarDay(day.date, { weekday: undefined }) }}</span>
             </span>
             <span v-if="day.slots.length" class="flex flex-wrap justify-end gap-1.5">
-              <span v-for="s in day.slots" :key="s.startTime" class="num rounded-md bg-forest-50 px-2 py-0.5 text-xs font-medium text-forest-800">
+              <span v-for="s in day.slots" :key="s.startTime" class="num rounded-md bg-forest-50 px-2 py-0.5 text-xs font-medium text-forest-800 dark:text-forest-200">
                 {{ s.startTime }}–{{ s.endTime }}
               </span>
             </span>
@@ -319,7 +319,7 @@ useHead(() => ({ title: provider.value ? `${provider.value.displayName} | پت�
               <div class="flex items-center justify-between gap-3">
                 <p class="text-sm font-semibold text-highlighted">{{ item.ownerName }}</p>
                 <span class="inline-flex items-center gap-1 text-sm font-medium">
-                  <UIcon name="i-lucide-star" class="size-4 fill-terracotta-400 text-terracotta-400" aria-hidden="true" />
+                  <UIcon name="i-lucide-star" class="size-4 fill-terracotta-400 text-terracotta-400 dark:fill-terracotta-300 dark:text-terracotta-300" aria-hidden="true" />
                   <span class="num">{{ formatRating(item.overall) }}</span>
                 </span>
               </div>

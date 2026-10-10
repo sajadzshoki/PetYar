@@ -11,7 +11,6 @@ export default defineNuxtConfig({
       meta: [
         { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
         { name: 'description', content: 'پت‌یار، بازار خدمات حیوانات خانگی در ایران — واکسیناسیون، نگهداری، آرایش و مراقبت با ارائه‌دهندگان تأییدشده.' },
-        { name: 'theme-color', content: '#f8f4ee' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
         { name: 'apple-mobile-web-app-title', content: 'پت‌یار' },
@@ -27,8 +26,15 @@ export default defineNuxtConfig({
     pageTransition: { name: 'page', mode: 'out-in' },
   },
   css: ['~/assets/css/main.css'],
-  ui: {
-    colorMode: false,
+  // Nuxt UI ships @nuxtjs/color-mode. Light is the default until the user chooses.
+  // A cookie (not the auth session) lets the server render the saved theme and the
+  // inline head script apply it before paint, so reloads do not flash or mismatch.
+  colorMode: {
+    preference: 'light',
+    fallback: 'light',
+    classSuffix: '',
+    storage: 'cookie',
+    storageKey: 'nuxt-color-mode',
   },
   runtimeConfig: {
     session: {

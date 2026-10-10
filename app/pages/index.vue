@@ -87,7 +87,7 @@ const trust = [
           </p>
           <h1 class="mt-3 text-[1.9rem] font-extrabold leading-[1.3] text-highlighted sm:text-4xl lg:text-5xl lg:leading-[1.25]">
             مراقبت درست،
-            <span class="text-terracotta-600">نزدیک شما</span>
+            <span class="text-terracotta-600 dark:text-terracotta-400">نزدیک شما</span>
           </h1>
           <p class="mt-4 text-[15px] leading-8 text-toned sm:text-base">
             ارائه‌دهندگان نگهداری، آرایش، دامپزشکی و آموزش را پیدا کنید؛ رزرو، گفتگو و پرداخت همین‌جا انجام می‌شود.
@@ -169,7 +169,7 @@ const trust = [
             :to="{ path: '/providers', query: { category: cat.id } }"
             class="pressable surface group flex h-full items-center gap-3 p-3.5 transition-colors hover:border-forest-300 sm:flex-col sm:items-start sm:p-5"
           >
-            <span class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-forest-50 text-primary transition-colors group-hover:bg-forest-100">
+            <span class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-forest-50 text-primary transition-colors group-hover:bg-forest-100 dark:group-hover:bg-forest-800">
               <UIcon :name="categoryIcon(cat.slug)" class="size-6" aria-hidden="true" />
             </span>
             <span class="text-sm font-semibold text-highlighted sm:text-base">{{ cat.name }}</span>
@@ -223,7 +223,7 @@ const trust = [
       <h2 id="home-how" class="text-xl font-bold sm:text-2xl">سه قدم ساده</h2>
       <ol class="mt-6 grid gap-4 sm:grid-cols-3">
         <li v-for="(step, i) in steps" :key="step.title" class="surface relative p-5">
-          <span class="num absolute end-4 top-4 text-xs font-bold text-terracotta-500">{{ formatNumber(i + 1).padStart(2, '۰') }}</span>
+          <span class="num absolute end-4 top-4 text-xs font-bold text-terracotta-500 dark:text-terracotta-300">{{ formatNumber(i + 1).padStart(2, '۰') }}</span>
           <span class="flex size-11 items-center justify-center rounded-xl bg-canvas-deep text-highlighted">
             <UIcon :name="step.icon" class="size-5" aria-hidden="true" />
           </span>
@@ -246,7 +246,7 @@ const trust = [
             color="neutral"
             variant="solid"
             size="md"
-            class="mt-6 bg-white text-forest-800 hover:bg-forest-50"
+            class="mt-6 bg-white text-forest-800 hover:bg-forest-50 dark:bg-white dark:text-forest-800 dark:hover:bg-forest-100"
           >
             {{ loggedIn ? 'شروع جستجو' : 'ساخت حساب رایگان' }}
           </UButton>

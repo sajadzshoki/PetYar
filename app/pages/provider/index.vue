@@ -126,7 +126,7 @@ useHead({ title: 'کارتابل ارائه‌دهنده | پت‌یار' })
           <li v-for="item in pending" :key="item.id">
             <ListRow :to="`/provider/bookings/${item.id}`">
               <template #leading>
-                <span class="flex size-10 items-center justify-center rounded-full bg-terracotta-50 text-terracotta-600">
+                <span class="flex size-10 items-center justify-center rounded-full bg-terracotta-50 text-terracotta-600 dark:text-terracotta-300">
                   <UIcon name="i-lucide-bell-ring" class="size-5" aria-hidden="true" />
                 </span>
               </template>

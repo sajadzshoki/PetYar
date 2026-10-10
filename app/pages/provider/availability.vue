@@ -232,7 +232,7 @@ useHead({ title: 'ساعت کاری و تقویم | پت‌یار' })
                 v-for="rule in rulesFor(day)"
                 :key="rule.id"
                 class="inline-flex items-center gap-1 rounded-full border py-0.5 ps-3 pe-1 text-sm"
-                :class="rule.isActive ? 'border-forest-200 bg-forest-50 text-forest-900' : 'border-default bg-canvas text-dimmed line-through'"
+                :class="rule.isActive ? 'border-forest-200 bg-forest-50 text-forest-900 dark:border-forest-400 dark:text-forest-200' : 'border-default bg-canvas text-dimmed line-through'"
               >
                 <span class="num">{{ rule.startTime }}–{{ rule.endTime }}</span>
                 <UButton
@@ -274,7 +274,7 @@ useHead({ title: 'ساعت کاری و تقویم | پت‌یار' })
               type="button"
               class="flex min-h-14 flex-col items-center justify-start gap-0.5 rounded-lg border p-1 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-primary sm:min-h-16"
               :class="[
-                dayMeta(cell)?.blocked ? 'border-ink-200 bg-canvas-deep text-dimmed' : dayMeta(cell)?.slots.length ? 'border-forest-200 bg-forest-50 text-forest-900' : 'border-default bg-paper text-muted',
+                dayMeta(cell)?.blocked ? 'border-ink-200 bg-canvas-deep text-dimmed' : dayMeta(cell)?.slots.length ? 'border-forest-200 bg-forest-50 text-forest-900 dark:border-forest-400 dark:text-forest-200' : 'border-default bg-paper text-muted',
                 cell === todayKey && 'ring-2 ring-terracotta-400',
               ]"
               :aria-label="`${formatCalendarDay(cell)}${dayMeta(cell)?.blocked ? '، مسدود' : dayMeta(cell)?.slots.length ? `، ${formatNumber(dayMeta(cell)!.slots.length)} بازه آزاد` : '، تعطیل'}`"
@@ -303,7 +303,7 @@ useHead({ title: 'ساعت کاری و تقویم | پت‌یار' })
         <li v-for="item in exceptions" :key="item.id" class="flex items-center gap-3 px-4 py-3 sm:px-5">
           <span
             class="flex size-9 shrink-0 items-center justify-center rounded-full"
-            :class="item.kind === 'BLOCK' ? 'bg-red-50 text-red-700' : 'bg-forest-50 text-forest-700'"
+            :class="item.kind === 'BLOCK' ? 'bg-red-50 text-red-700 dark:text-red-300' : 'bg-forest-50 text-forest-700 dark:text-forest-200'"
             aria-hidden="true"
           >
             <UIcon :name="item.kind === 'BLOCK' ? 'i-lucide-ban' : 'i-lucide-plus'" class="size-4" />

@@ -58,7 +58,7 @@ useHead({ title: 'پیام‌ها | پت‌یار' })
           </div>
           <span
             v-if="item.unreadCount"
-            class="num flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-white"
+            class="num flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-inverted"
             :aria-label="`${formatNumber(item.unreadCount)} پیام خوانده‌نشده`"
           >
             {{ formatNumber(item.unreadCount) }}

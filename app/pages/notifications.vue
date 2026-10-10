@@ -91,7 +91,7 @@ useHead({ title: 'اعلان‌ها | پت‌یار' })
         >
           <span
             class="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full"
-            :class="item.readAt ? 'bg-canvas-deep text-muted' : 'bg-forest-100 text-primary'"
+            :class="item.readAt ? 'bg-canvas-deep text-muted' : 'bg-forest-100 text-primary dark:bg-forest-50'"
             aria-hidden="true"
           >
             <UIcon :name="TYPE_ICONS[item.type] || 'i-lucide-bell'" class="size-5" />

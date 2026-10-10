@@ -83,7 +83,7 @@ useHead({ title: 'نظر مشتریان | پت‌یار' })
               <p class="text-xs text-dimmed">{{ formatDate(item.createdAt) }}</p>
             </div>
             <span class="inline-flex items-center gap-1 text-sm font-semibold">
-              <UIcon name="i-lucide-star" class="size-4 fill-terracotta-400 text-terracotta-400" aria-hidden="true" />
+              <UIcon name="i-lucide-star" class="size-4 fill-terracotta-400 text-terracotta-400 dark:fill-terracotta-300 dark:text-terracotta-300" aria-hidden="true" />
               <span class="num">{{ formatRating(item.overall) }}</span>
             </span>
           </div>

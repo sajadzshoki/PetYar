@@ -250,7 +250,7 @@ useHead({ title: 'درخواست رزرو | پت‌یار' })
           در حال برآورد قیمت…
         </div>
         <template v-else-if="quote">
-          <div v-if="!quote.available" class="flex items-start gap-2 text-sm text-red-700">
+          <div v-if="!quote.available" class="flex items-start gap-2 text-sm text-red-700 dark:text-red-300">
             <UIcon name="i-lucide-circle-alert" class="mt-1 size-4 shrink-0" aria-hidden="true" />
             <span>{{ quote.reason || 'این بازه آزاد نیست' }}</span>
           </div>

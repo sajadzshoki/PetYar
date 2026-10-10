@@ -32,6 +32,16 @@ Custom utilities:
 
 Nuxt UI theme (`app/app.config.ts`): `primary=forest`, `secondary=terracotta`, `neutral=ink`, `success=forest`, `warning=amber`, `error=red`. Buttons/inputs default to size `lg` (44px touch target); cards, modals and dropdowns are pre-styled to the paper surface.
 
+## Dark mode
+
+Nuxt UI’s color mode (`@nuxtjs/color-mode`) is the only theme switch. `nuxt.config.ts` sets `preference` and `fallback` to `light`, stores the choice in the `nuxt-color-mode` cookie (separate from the auth session), and an inline head script applies the class before paint.
+
+`ThemeToggle` (sun/moon, Lucide) lives in `AppHeader`, the auth layout, the account page, and provider settings. It sets `colorMode.preference` to `light` or `dark`. There is no system-preference mode and no extra bottom-nav item.
+
+Dark values are a `.dark` block in `main.css`. Light tokens are not rewritten. The dark palette is warm charcoal (`canvas` `#161311`, `paper` `#3a332c`) with off-white text. `forest-50` and `terracotta-50` become dark tints; `forest-100/200/800` stay literal because the trust band and chat timestamps use them as fixed brand colors. In dark mode `--ui-primary` / `--ui-secondary` move to shade 300 so text and fills both clear 4.5:1, and `--ui-text-inverted` becomes espresso so solid buttons keep dark type on those lighter fills.
+
+A few components add `dark:` utilities where one class is a light-mode wash and another is a fixed brand color (stars, error text, the white trust-band button). Logos and photos are not filtered.
+
 ## Typography
 
 - Vazirmatn is self-hosted: `public/fonts/Vazirmatn-Variable.woff2` (wght 100–900, SIL OFL — see `public/fonts/Vazirmatn-OFL.txt`), declared with a single `@font-face` in `main.css`, preloaded in `nuxt.config.ts`, and `@nuxt/fonts` is told `provider: 'none'` so nothing is fetched from Google.
@@ -88,7 +98,8 @@ Rules:
 - Icon-only buttons carry `aria-label`; decorative icons are `aria-hidden`.
 - Status is conveyed by icon + label + color.
 - Live regions on the booking quote box and chat log; reduced-motion users get no transitions or skeleton pulse.
-- Contrast (WCAG relative luminance): `ink-500` (`text-muted`) is 5.4:1 on `paper`, 5.0:1 on `canvas`, 4.6:1 on `canvas-deep`; `ink-800` body text is 11.7:1; `forest-600` buttons with white text are 6.3:1. `ink-400` (`text-dimmed`) is reserved for non-essential hints and icons.
+- Contrast, light (WCAG relative luminance): `ink-500` (`text-muted`) is 5.4:1 on `paper`, 5.0:1 on `canvas`, 4.6:1 on `canvas-deep`; `ink-800` body text is 11.7:1; `forest-600` buttons with white text are 6.3:1.
+- Contrast, dark: muted text is 5.1:1 on `paper` and higher on `canvas`; body text is 9.3:1 on `paper`; primary sage (`forest-300`) is 6.1:1 as text on `paper` and 9.1:1 as a fill behind espresso type.
 
 ## Responsive checks
 

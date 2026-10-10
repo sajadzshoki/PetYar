@@ -155,7 +155,7 @@ useHead(() => ({ title: booking.value ? `${booking.value.serviceTitle} | پت‌
         <!-- Payment status -->
         <div class="mt-4 rounded-lg bg-canvas-deep p-3 text-sm">
           <template v-if="paid && booking.payment">
-            <p class="flex items-center gap-1.5 font-medium text-forest-800">
+            <p class="flex items-center gap-1.5 font-medium text-forest-800 dark:text-forest-200">
               <UIcon name="i-lucide-badge-check" class="size-4" aria-hidden="true" />
               پرداخت تأیید شده
             </p>

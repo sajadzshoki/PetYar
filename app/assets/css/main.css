@@ -126,6 +126,7 @@
 html {
   background-color: var(--color-canvas);
   color: var(--color-ink-900);
+  color-scheme: light;
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
 }
@@ -252,6 +253,91 @@ textarea::placeholder {
 .page-leave-to {
   opacity: 0;
   transform: translateY(4px);
+}
+
+/* ------------------------------------------------------------------
+   Dark theme
+   Light values above stay exactly as they are. `.dark` is added to <html>
+   by @nuxtjs/color-mode (Nuxt UI). Overrides sit outside @layer so they win
+   over Tailwind's theme layer and Nuxt UI's default dark neutrals.
+   Surfaces are warm charcoal — not pure black — and the brand greens/terracotta
+   are re-tuned only where a light-mode step would be unreadable.
+   ------------------------------------------------------------------ */
+.dark {
+  color-scheme: dark;
+
+  --color-canvas: #161311;
+  --color-canvas-deep: #221d19;
+  --color-paper: #3a332c;
+
+  /* Text scale flips toward warm off-white. 950/100 stay put: lightboxes and
+     code blocks use them as an intentional near-black surface with light text. */
+  --color-ink-900: #f6f1ea;
+  --color-ink-800: #e6ddd2;
+  --color-ink-700: #f0e8df;
+  --color-ink-600: #cbbfb2;
+  --color-ink-500: #b3a496; /* muted: ≥4.5:1 on paper, canvas and canvas-deep */
+  --color-ink-400: #aa9b8c; /* dimmed / placeholders: ≥4.5:1 on paper */
+  --color-ink-300: #aa9b8c;
+  --color-ink-200: #675e54;
+
+  /* Light washes become dark tints. 100/200/800 stay literal — the trust band,
+     chat timestamps and the white CTA use them as fixed brand colors. */
+  --color-forest-50: #243028;
+  --color-terracotta-50: #4a342c;
+  --color-terracotta-100: #5c4034;
+  --color-red-50: #4a3030;
+
+  --ui-text-dimmed: var(--color-ink-400);
+  --ui-text-muted: var(--color-ink-500);
+  --ui-text-toned: var(--color-ink-600);
+  --ui-text: var(--color-ink-800);
+  --ui-text-highlighted: var(--color-ink-900);
+  /* Dark text on the lightened primary/secondary fills (forest-300, terracotta-300). */
+  --ui-text-inverted: #161311;
+
+  --ui-bg: var(--color-paper);
+  --ui-bg-muted: var(--color-canvas);
+  --ui-bg-elevated: var(--color-canvas-deep);
+  --ui-bg-accented: #4a433c;
+  --ui-bg-inverted: #f3ece3;
+
+  --ui-border: var(--color-ink-200);
+  --ui-border-muted: #4e463f;
+  --ui-border-accented: #7a7066;
+  --ui-border-inverted: #f3ece3;
+
+  /* Shade 400 is too dark as text on charcoal and too light for white type.
+     Sage / clay at 300 stays on-brand and clears 4.5:1 both as text and as a fill. */
+  --ui-primary: var(--color-forest-300);
+  --ui-secondary: var(--color-terracotta-300);
+  --ui-success: var(--color-forest-300);
+  --ui-info: var(--color-forest-300);
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.45);
+  --shadow-raised: 0 12px 32px -12px rgb(0 0 0 / 0.65);
+  --shadow-nav: 0 -1px 0 rgb(246 241 234 / 0.08);
+}
+
+.dark :focus-visible {
+  outline-color: var(--color-forest-300);
+}
+
+.dark ::selection {
+  background: color-mix(in srgb, var(--color-terracotta-400) 55%, #161311);
+  color: var(--color-ink-900);
+}
+
+.dark .skeleton {
+  background-color: #4a433c;
+}
+
+.dark input:-webkit-autofill,
+.dark textarea:-webkit-autofill,
+.dark select:-webkit-autofill {
+  -webkit-text-fill-color: var(--ui-text);
+  caret-color: var(--ui-text);
+  box-shadow: 0 0 0 1000px var(--color-paper) inset;
 }
 
 /* Reduced motion */

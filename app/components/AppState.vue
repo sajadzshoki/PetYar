@@ -40,7 +40,7 @@ const resolvedIcon = computed(() => {
       class="flex size-12 items-center justify-center rounded-full"
       :class="{
         'bg-canvas-deep text-muted': variant === 'empty',
-        'bg-red-50 text-red-700': variant === 'error',
+        'bg-red-50 text-red-700 dark:text-red-300': variant === 'error',
         'bg-forest-50 text-primary': variant === 'loading',
       }"
     >

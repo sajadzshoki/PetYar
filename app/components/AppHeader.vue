@@ -90,6 +90,7 @@ watch(() => route.fullPath, () => {
       </div>
 
       <div class="flex items-center gap-1 sm:gap-2">
+        <ThemeToggle />
         <template v-if="loggedIn">
           <UButton
             to="/notifications"
@@ -103,7 +104,7 @@ watch(() => route.fullPath, () => {
             <UIcon name="i-lucide-bell" class="size-5" />
             <span
               v-if="unread > 0"
-              class="absolute -top-0.5 -start-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-terracotta-500 px-1 text-[10px] font-bold leading-none text-white"
+              class="absolute -top-0.5 -start-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-terracotta-500 px-1 text-[10px] font-bold leading-none text-white dark:text-inverted"
               aria-label="اعلان خوانده‌نشده"
             >
               {{ unread > 9 ? '۹+' : formatNumber(unread) }}

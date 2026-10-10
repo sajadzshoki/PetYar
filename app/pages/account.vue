@@ -128,7 +128,7 @@ onMounted(load)
             @click="fileInput?.click()"
           >
             <MediaThumb :src="user.avatarUrl" :initial="initialOf(user.displayName)" size-class="size-20" rounded="full" />
-            <span class="absolute -bottom-0.5 -end-0.5 flex size-7 items-center justify-center rounded-full border-2 border-paper bg-primary text-white">
+            <span class="absolute -bottom-0.5 -end-0.5 flex size-7 items-center justify-center rounded-full border-2 border-paper bg-primary text-inverted">
               <UIcon :name="uploading ? 'i-lucide-loader' : 'i-lucide-camera'" class="size-3.5" :class="uploading && 'animate-spin'" aria-hidden="true" />
             </span>
           </button>
@@ -140,6 +140,14 @@ onMounted(load)
           </div>
         </div>
       </AppSection>
+
+      <div class="surface flex items-center justify-between gap-3 p-4">
+        <div class="min-w-0">
+          <p class="text-sm font-bold text-highlighted">حالت نمایش</p>
+          <p class="text-xs leading-5 text-muted">روشن یا تیره. انتخاب شما روی همین دستگاه می‌ماند.</p>
+        </div>
+        <ThemeToggle />
+      </div>
 
       <!-- Workspaces -->
       <div class="grid gap-3 sm:grid-cols-2">
@@ -161,7 +169,7 @@ onMounted(load)
           to="/admin"
           class="pressable surface flex items-center gap-3 p-4 transition-colors hover:border-forest-300"
         >
-          <span class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-terracotta-50 text-terracotta-700">
+          <span class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-terracotta-50 text-terracotta-700 dark:text-terracotta-300">
             <UIcon name="i-lucide-shield-check" class="size-5" aria-hidden="true" />
           </span>
           <span class="min-w-0 flex-1">

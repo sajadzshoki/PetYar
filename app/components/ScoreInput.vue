@@ -51,7 +51,7 @@ function onKeydown(event: KeyboardEvent) {
         :tabindex="modelValue === n ? 0 : -1"
         :disabled="disabled"
         class="flex size-10 items-center justify-center rounded-md transition-colors disabled:opacity-50"
-        :class="n <= modelValue ? 'text-terracotta-500' : 'text-ink-300 hover:text-ink-400'"
+        :class="n <= modelValue ? 'text-terracotta-500 dark:text-terracotta-300' : 'text-ink-300 hover:text-ink-400'"
         @click="emit('update:modelValue', n)"
       >
         <UIcon name="i-lucide-star" class="size-6" :class="n <= modelValue && 'fill-current'" />

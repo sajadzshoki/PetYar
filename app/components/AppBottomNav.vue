@@ -39,12 +39,12 @@ function badge(item: NavItem) {
         >
           <span
             class="relative flex h-7 w-12 items-center justify-center rounded-full transition-colors"
-            :class="active(item) && 'bg-forest-100'"
+            :class="active(item) && 'bg-forest-100 dark:bg-forest-50'"
           >
             <UIcon :name="item.icon" class="size-[22px]" aria-hidden="true" />
             <span
               v-if="badge(item) > 0"
-              class="absolute -top-0.5 end-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-terracotta-500 px-1 text-[10px] font-bold text-white"
+              class="absolute -top-0.5 end-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-terracotta-500 px-1 text-[10px] font-bold text-white dark:text-inverted"
             >
               {{ badge(item) > 9 ? '۹+' : formatNumber(badge(item)) }}
             </span>

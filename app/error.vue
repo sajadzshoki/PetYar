@@ -21,7 +21,7 @@ function goTo(path: string) {
 <template>
   <div class="flex min-h-dvh flex-col items-center justify-center bg-canvas px-6 py-16 text-center text-default">
     <img src="/brand/petyar-mark.png" alt="" width="96" height="96" class="size-24 opacity-90">
-    <p class="num mt-8 text-sm font-semibold text-terracotta-600">{{ formatNumber(code) }}</p>
+    <p class="num mt-8 text-sm font-semibold text-terracotta-600 dark:text-terracotta-400">{{ formatNumber(code) }}</p>
     <h1 class="mt-2 text-2xl font-bold text-highlighted sm:text-3xl">{{ title }}</h1>
     <p class="mt-3 max-w-sm text-sm leading-7 text-muted">{{ description }}</p>
     <div class="mt-8 flex flex-wrap items-center justify-center gap-2">

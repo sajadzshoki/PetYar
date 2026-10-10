@@ -297,7 +297,7 @@ useHead(() => ({ title: booking.value ? `${booking.value.serviceTitle} | پت‌
       </AppSection>
       <AppSection v-else-if="booking.review" title="نظر ثبت‌شده" class="mt-6">
         <p class="inline-flex items-center gap-1.5 text-sm font-semibold">
-          <UIcon name="i-lucide-star" class="size-4 fill-terracotta-400 text-terracotta-400" aria-hidden="true" />
+          <UIcon name="i-lucide-star" class="size-4 fill-terracotta-400 text-terracotta-400 dark:fill-terracotta-300 dark:text-terracotta-300" aria-hidden="true" />
           <span class="num">{{ formatRating(booking.review.overall) }}</span>
           <span class="font-normal text-muted">از ۵</span>
         </p>

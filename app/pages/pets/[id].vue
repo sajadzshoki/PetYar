@@ -228,7 +228,7 @@ watch(id, load, { immediate: true })
             @click="photoInput?.click()"
           >
             <MediaThumb :src="pet.photoUrl" :icon="PET_TYPE_ICONS[pet.type]" size-class="size-24" rounded="xl" />
-            <span class="absolute -bottom-1 -end-1 flex size-7 items-center justify-center rounded-full border-2 border-paper bg-primary text-white">
+            <span class="absolute -bottom-1 -end-1 flex size-7 items-center justify-center rounded-full border-2 border-paper bg-primary text-inverted">
               <UIcon :name="uploading ? 'i-lucide-loader' : 'i-lucide-camera'" class="size-3.5" :class="uploading && 'animate-spin'" aria-hidden="true" />
             </span>
           </button>
@@ -357,7 +357,7 @@ watch(id, load, { immediate: true })
       <AppSection title="داروها" class="mt-6">
         <ul v-if="pet.medications.length" class="divide-y divide-muted">
           <li v-for="item in pet.medications" :key="item.id" class="flex items-start gap-3 py-3 first:pt-0">
-            <span class="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-terracotta-50 text-terracotta-700">
+            <span class="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-terracotta-50 text-terracotta-700 dark:text-terracotta-300">
               <UIcon name="i-lucide-pill" class="size-4" aria-hidden="true" />
             </span>
             <div class="min-w-0 flex-1 text-sm">

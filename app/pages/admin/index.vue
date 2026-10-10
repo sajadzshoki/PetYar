@@ -61,7 +61,7 @@ useHead({ title: 'مدیریت | پت‌یار' })
             class="pressable surface flex items-center gap-3 p-4 transition-colors hover:border-forest-300"
             :class="item.urgent && 'ring-terracotta-300 bg-terracotta-50/40'"
           >
-            <span class="flex size-11 shrink-0 items-center justify-center rounded-full" :class="item.urgent ? 'bg-terracotta-100 text-terracotta-700' : 'bg-canvas-deep text-muted'" aria-hidden="true">
+            <span class="flex size-11 shrink-0 items-center justify-center rounded-full" :class="item.urgent ? 'bg-terracotta-100 text-terracotta-700 dark:bg-terracotta-50 dark:text-terracotta-300' : 'bg-canvas-deep text-muted'" aria-hidden="true">
               <UIcon :name="item.icon" class="size-5" />
             </span>
             <span class="min-w-0 flex-1">
