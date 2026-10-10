@@ -6,6 +6,10 @@ export const NOTIFICATION_TYPES = [
   'PAYMENT_RESULT',
   'NEW_MESSAGE',
   'REVIEW_AVAILABLE',
+  'VERIFICATION_UPDATE',
+  'ACCOUNT_STATUS',
+  'DISPUTE_UPDATE',
+  'REPORT_UPDATE',
 ] as const
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number]

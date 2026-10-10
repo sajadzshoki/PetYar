@@ -9,6 +9,10 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   'PAYMENT_RESULT',
   'NEW_MESSAGE',
   'REVIEW_AVAILABLE',
+  'VERIFICATION_UPDATE',
+  'ACCOUNT_STATUS',
+  'DISPUTE_UPDATE',
+  'REPORT_UPDATE',
 ])
 
 export const notifications = pgTable('notifications', {

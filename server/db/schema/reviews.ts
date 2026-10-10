@@ -14,6 +14,9 @@ export const reviews = pgTable('reviews', {
   punctuality: smallint('punctuality').notNull(),
   care: smallint('care').notNull(),
   comment: text('comment').notNull(),
+  hiddenAt: timestamp('hidden_at', { withTimezone: true }),
+  hiddenBy: uuid('hidden_by').references(() => users.id, { onDelete: 'set null' }),
+  hideReason: text('hide_reason'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 })
 

@@ -1,4 +1,4 @@
-import { and, avg, count, desc, eq, sql } from 'drizzle-orm'
+import { and, avg, count, desc, eq, isNull, sql } from 'drizzle-orm'
 import { getDb } from '../db/client'
 import { bookings, favorites, providers, reviews, users } from '../db/schema'
 import type { ReviewRow } from '../db/schema/reviews'
@@ -37,6 +37,7 @@ function toReview(row: ReviewRow, ownerName: string): Review {
     punctuality: row.punctuality,
     care: row.care,
     comment: row.comment,
+    hidden: Boolean(row.hiddenAt),
     createdAt: row.createdAt.toISOString(),
   }
 }
@@ -51,7 +52,7 @@ export const reviewService = {
       quality: avg(reviews.quality),
       punctuality: avg(reviews.punctuality),
       care: avg(reviews.care),
-    }).from(reviews).where(eq(reviews.providerId, providerId))
+    }).from(reviews).where(and(eq(reviews.providerId, providerId), isNull(reviews.hiddenAt)))
     const reviewCount = Number(row?.reviewCount || 0)
     if (!reviewCount) return emptyRating()
     return {
@@ -71,7 +72,7 @@ export const reviewService = {
       ownerName: users.displayName,
     }).from(reviews)
       .innerJoin(users, eq(users.id, reviews.ownerId))
-      .where(eq(reviews.providerId, providerId))
+      .where(and(eq(reviews.providerId, providerId), isNull(reviews.hiddenAt)))
       .orderBy(desc(reviews.createdAt))
       .limit(50)
     return rows.map(r => toReview(r.review, r.ownerName))

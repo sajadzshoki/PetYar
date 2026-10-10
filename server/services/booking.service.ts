@@ -22,6 +22,7 @@ import { parseIrr } from '../../shared/utils/money'
 import { messagingService } from './messaging.service'
 import { notificationService } from './notification.service'
 import { reviewService } from './review.service'
+import { disputeService } from './dispute.service'
 
 type Tx = Parameters<Parameters<ReturnType<typeof getDb>['transaction']>[0]>[0]
 
@@ -310,12 +311,20 @@ export const bookingService = {
   },
 
   async disputeAsOwner(userId: string, id: string, reason: string) {
+    const db = getDb()
+    const [row] = await db.select().from(bookings).where(eq(bookings.id, id)).limit(1)
+    if (!row) throw notFound('رزرو یافت نشد')
+    await disputeService.open(userId, id, reason, row.status)
     return this.ownerTransition(userId, id, 'DISPUTED', ['ACCEPTED', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED'], {
       cancellationReason: reason,
     })
   },
 
   async disputeAsProvider(userId: string, id: string, reason: string) {
+    const db = getDb()
+    const [row] = await db.select().from(bookings).where(eq(bookings.id, id)).limit(1)
+    if (!row) throw notFound('رزرو یافت نشد')
+    await disputeService.open(userId, id, reason, row.status)
     return this.providerTransition(userId, id, 'DISPUTED', ['ACCEPTED', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED'], {
       cancellationReason: reason,
     })

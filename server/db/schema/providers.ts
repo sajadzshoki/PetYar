@@ -25,6 +25,9 @@ export const providers = pgTable('providers', {
   longitude: numeric('longitude', { precision: 10, scale: 7 }),
   serviceRadiusKm: numeric('service_radius_km', { precision: 6, scale: 2 }),
   isActive: boolean('is_active').notNull().default(true),
+  verificationStatus: varchar('verification_status', { length: 24 }).notNull().default('UNVERIFIED'),
+  verificationNote: text('verification_note'),
+  verifiedAt: timestamp('verified_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })

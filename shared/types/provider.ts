@@ -44,6 +44,8 @@ export interface ProviderProfile {
   longitude: number | null
   serviceRadiusKm: number | null
   isActive: boolean
+  verificationStatus: string
+  verified: boolean
   createdAt: string
   updatedAt: string
 }

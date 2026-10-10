@@ -3,7 +3,7 @@ import { getDb } from '../db/client'
 import { users } from '../db/schema'
 import type { LoginInput, RegisterInput } from '../../shared/validation/auth'
 import { DEFAULT_USER_ROLE } from '../../shared/constants/roles'
-import { conflict, unauthorized } from '../utils/errors'
+import { conflict, forbidden, unauthorized } from '../utils/errors'
 import type { PublicUser } from '../../shared/types/user'
 import { logger } from '../utils/logger'
 import { toPublicUser, toSessionUser } from './profile.service'
@@ -51,6 +51,13 @@ export const authService = {
       throw unauthorized('ایمیل یا رمز عبور نادرست است')
     }
 
+    if (user.status === 'SUSPENDED') {
+      throw forbidden('این حساب مسدود شده است')
+    }
+    if (user.status === 'DEACTIVATED') {
+      throw forbidden('این حساب غیرفعال است')
+    }
+
     logger.info('user_login', { userId: user.id })
     return { publicUser: toPublicUser(user), sessionUser: toSessionUser(user) }
   },
@@ -59,5 +66,11 @@ export const authService = {
     const db = getDb()
     const [user] = await db.select().from(users).where(eq(users.id, id)).limit(1)
     return user ? toPublicUser(user) : null
+  },
+
+  async getRowById(id: string) {
+    const db = getDb()
+    const [user] = await db.select().from(users).where(eq(users.id, id)).limit(1)
+    return user ?? null
   },
 }

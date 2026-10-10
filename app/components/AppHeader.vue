@@ -33,6 +33,7 @@ async function logout() {
         <NuxtLink v-if="loggedIn" to="/inbox" class="hover:text-ink-900">پیام‌ها</NuxtLink>
         <NuxtLink v-if="loggedIn" to="/notifications" class="hover:text-ink-900">اعلان‌ها</NuxtLink>
         <NuxtLink v-if="loggedIn" to="/provider" class="hover:text-ink-900">خدمات من</NuxtLink>
+        <NuxtLink v-if="loggedIn && user?.role === 'ADMIN'" to="/admin" class="hover:text-ink-900">مدیریت</NuxtLink>
         <NuxtLink v-if="loggedIn" to="/account" class="hover:text-ink-900">حساب من</NuxtLink>
       </nav>
 
@@ -67,6 +68,7 @@ async function logout() {
         <NuxtLink v-if="loggedIn" to="/inbox" @click="open = false">پیام‌ها</NuxtLink>
         <NuxtLink v-if="loggedIn" to="/notifications" @click="open = false">اعلان‌ها</NuxtLink>
         <NuxtLink v-if="loggedIn" to="/provider" @click="open = false">خدمات من</NuxtLink>
+        <NuxtLink v-if="loggedIn && user?.role === 'ADMIN'" to="/admin" @click="open = false">مدیریت</NuxtLink>
         <NuxtLink v-if="loggedIn" to="/account" @click="open = false">حساب من</NuxtLink>
         <UButton v-if="loggedIn" color="neutral" variant="outline" block @click="logout">خروج</UButton>
         <div v-else class="flex gap-2">

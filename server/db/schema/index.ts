@@ -9,11 +9,11 @@
  * Phase 07: payments, transactions, refunds (gateway abstraction).
  * Phase 08: conversations, messages, in-app notifications.
  * Phase 09: reviews, ratings, favorites (no fake verification).
+ * Phase 11: admin, verification documents, reports, disputes, audit log.
  *
- * Future modules (do not implement yet):
- * reports, disputes workflow, verification badges, realtime transport.
+ * Future modules (do not implement yet): realtime transport.
  */
-export { users, userRoleEnum } from './users'
+export { users, userRoleEnum, userStatusEnum } from './users'
 export type { UserRow, NewUserRow } from './users'
 export {
   pets,
@@ -44,3 +44,24 @@ export { notifications, notificationTypeEnum } from './notifications'
 export type { NotificationRow } from './notifications'
 export { reviews, favorites } from './reviews'
 export type { ReviewRow, FavoriteRow } from './reviews'
+export {
+  verificationApplications,
+  verificationDocuments,
+  reports,
+  disputes,
+  auditLogs,
+  verificationStatusEnum,
+  verificationDocumentKindEnum,
+  reportTargetTypeEnum,
+  reportReasonEnum,
+  reportStatusEnum,
+  disputeStatusEnum,
+  disputeResolutionEnum,
+} from './moderation'
+export type {
+  VerificationApplicationRow,
+  VerificationDocumentRow,
+  ReportRow,
+  DisputeRow,
+  AuditLogRow,
+} from './moderation'

@@ -13,6 +13,7 @@ export interface Review extends ReviewScores {
   ownerId: string
   ownerName: string
   comment: string
+  hidden: boolean
   createdAt: string
 }
 

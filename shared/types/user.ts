@@ -1,4 +1,5 @@
 import type { UserRole } from '../constants/roles'
+import type { UserStatus } from '../constants/moderation'
 
 export interface PublicUser {
   id: string
@@ -10,6 +11,7 @@ export interface PublicUser {
   bio: string | null
   avatarUrl: string | null
   role: UserRole
+  status: UserStatus
   createdAt: string
 }
 

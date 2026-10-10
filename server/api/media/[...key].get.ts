@@ -13,7 +13,15 @@ export default defineEventHandler(async (event) => {
 
     if (!isPublicMedia(key)) {
       const session = await getSessionUser(event as never)
-      if (!session || !canAccessMedia(session.id, key)) throw forbidden()
+      if (!session) throw forbidden()
+      if (key.startsWith('verification/')) {
+        if (session.role !== 'ADMIN') {
+          const { providerService } = await import('../../services/provider.service')
+          const provider = await providerService.getByUserId(session.id)
+          if (!provider || !key.startsWith(`verification/${provider.id}/`)) throw forbidden()
+        }
+      }
+      else if (!canAccessMedia(session.id, key)) throw forbidden()
       if (isMessageMedia(key) && !await messagingService.canAccessAttachment(session.id, key)) throw forbidden()
     }
 

@@ -25,6 +25,7 @@ export function toPublicUser(user: UserRow): PublicUser {
     bio: user.bio,
     avatarUrl: mediaUrl(user.avatarKey),
     role: user.role,
+    status: user.status,
     createdAt: user.createdAt.toISOString(),
   }
 }

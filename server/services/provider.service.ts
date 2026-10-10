@@ -67,6 +67,8 @@ function toProfile(row: ProviderRow, gallery: GalleryRow[]): ProviderProfile {
     longitude: num(row.longitude),
     serviceRadiusKm: num(row.serviceRadiusKm),
     isActive: row.isActive,
+    verificationStatus: row.verificationStatus,
+    verified: row.verificationStatus === 'APPROVED',
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   }

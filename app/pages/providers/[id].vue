@@ -111,6 +111,7 @@ async function startChat() {
         </div>
         <div class="mt-5 sm:mt-0">
           <h1 class="text-3xl font-semibold tracking-tight">{{ provider.displayName }}</h1>
+          <p v-if="provider.verified" class="mt-1 text-sm text-forest-700">احراز هویت این پرونده توسط پت‌یار تأیید شده است.</p>
           <p v-if="provider.rating.reviewCount" class="mt-2 text-sm text-ink-700">
             میانگین {{ provider.rating.overall }} از ۵ · {{ provider.rating.reviewCount }} نظر
           </p>
@@ -125,6 +126,7 @@ async function startChat() {
             <UButton size="sm" color="neutral" variant="ghost" :loading="favPending" @click="toggleFavorite">
               {{ provider.favorited ? 'حذف از ذخیره‌ها' : 'ذخیره' }}
             </UButton>
+            <UButton size="sm" color="neutral" variant="ghost" :to="`/report?type=PROVIDER&id=${provider.id}`">گزارش</UButton>
           </div>
         </div>
       </div>
