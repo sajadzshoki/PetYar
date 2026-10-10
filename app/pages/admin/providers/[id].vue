@@ -13,25 +13,43 @@ interface Row {
 }
 
 const route = useRoute()
+const toast = useToast()
 const provider = ref<Row | null>(null)
 const reason = ref('')
 const error = ref('')
+const loadError = ref('')
+const loading = ref(true)
 const pending = ref(false)
+const confirm = ref<'deactivate' | 'activate' | null>(null)
 
 async function load() {
-  const res = await $fetch<{ data: { provider: Row } }>(`/api/admin/providers/${route.params.id}`)
-  provider.value = res.data.provider
-}
-
-async function act(path: string) {
-  if (reason.value.trim().length < 3) return
-  pending.value = true
+  loading.value = true
+  loadError.value = ''
   try {
-    const res = await $fetch<{ data: { provider: Row } }>(path, { method: 'POST', body: { reason: reason.value } })
+    const res = await $fetch<{ data: { provider: Row } }>(`/api/admin/providers/${route.params.id}`)
     provider.value = res.data.provider
   }
   catch (err) {
-    error.value = apiErrorMessage(err, 'خطا')
+    loadError.value = apiErrorMessage(err, 'پرونده یافت نشد')
+  }
+  finally {
+    loading.value = false
+  }
+}
+
+async function act() {
+  if (!provider.value || !confirm.value || reason.value.trim().length < 3) return
+  pending.value = true
+  error.value = ''
+  try {
+    const res = await $fetch<{ data: { provider: Row } }>(`/api/admin/providers/${provider.value.id}/${confirm.value}`, { method: 'POST', body: { reason: reason.value } })
+    provider.value = res.data.provider
+    toast.add({ title: 'وضعیت پرونده به‌روز شد', icon: 'i-lucide-check', color: 'success' })
+    confirm.value = null
+    reason.value = ''
+  }
+  catch (err) {
+    error.value = apiErrorMessage(err, 'انجام نشد')
   }
   finally {
     pending.value = false
@@ -39,24 +57,63 @@ async function act(path: string) {
 }
 
 onMounted(load)
+
+useHead(() => ({ title: `${provider.value?.displayName || 'ارائه‌دهنده'} | مدیریت پت‌یار` }))
 </script>
 
 <template>
-  <div class="mx-auto max-w-lg px-4 py-10">
-    <NuxtLink to="/admin/providers" class="text-sm text-ink-600">ارائه‌دهندگان</NuxtLink>
-    <template v-if="provider">
-      <h1 class="mt-3 text-2xl font-semibold">{{ provider.displayName }}</h1>
-      <p class="mt-2 text-sm">{{ provider.email }}</p>
-      <p class="mt-2 text-sm">{{ provider.isActive ? 'قابل مشاهده' : 'پنهان از جستجو' }} · {{ VERIFICATION_STATUS_LABELS[provider.verificationStatus] }}</p>
-      <UTextarea v-model="reason" class="mt-6 w-full" placeholder="دلیل" />
-      <p v-if="error" class="mt-2 text-sm text-terracotta-700">{{ error }}</p>
-      <div class="mt-4 flex gap-2">
-        <UButton :loading="pending" color="neutral" variant="outline" @click="act(`/api/admin/providers/${provider.id}/deactivate`)">پنهان کردن</UButton>
-        <UButton :loading="pending" @click="act(`/api/admin/providers/${provider.id}/activate`)">نمایش عمومی</UButton>
-      </div>
-      <p class="mt-6 text-sm">
-        <NuxtLink :to="`/providers/${provider.id}`" class="text-terracotta-700">صفحه عمومی</NuxtLink>
-      </p>
+  <div class="max-w-content">
+    <PageHeader :title="provider?.displayName || 'ارائه‌دهنده'" compact :back="{ to: '/admin/providers', label: 'ارائه‌دهندگان' }">
+      <template v-if="provider" #actions>
+        <UButton :to="`/providers/${provider.id}`" color="neutral" variant="outline" size="md" icon="i-lucide-eye">صفحه عمومی</UButton>
+      </template>
+    </PageHeader>
+
+    <SkeletonList v-if="loading" :rows="2" />
+    <AppState v-else-if="loadError" variant="error" :title="loadError" retry @retry="load" />
+
+    <template v-else-if="provider">
+      <AppSection>
+        <div class="flex flex-wrap items-center gap-2">
+          <StatusBadge :label="VERIFICATION_STATUS_LABELS[provider.verificationStatus]" :meta="VERIFICATION_STATUS_META[provider.verificationStatus]" size="sm" />
+          <UBadge :color="provider.isActive ? 'success' : 'neutral'" variant="subtle" size="sm" class="rounded-full" :icon="provider.isActive ? 'i-lucide-eye' : 'i-lucide-eye-off'">
+            {{ provider.isActive ? 'قابل مشاهده' : 'پنهان از جستجو' }}
+          </UBadge>
+        </div>
+        <dl class="mt-3 text-sm">
+          <dt class="text-xs text-muted">ایمیل مالک</dt>
+          <dd class="font-medium text-highlighted"><span class="ltr">{{ provider.email }}</span></dd>
+        </dl>
+      </AppSection>
+
+      <AppSection title="اقدام مدیریتی" description="پنهان کردن، پرونده و خدمات را از جستجو حذف می‌کند؛ رزروهای فعال دست‌نخورده می‌مانند." class="mt-6">
+        <div class="flex flex-wrap gap-2">
+          <UButton v-if="provider.isActive" color="neutral" variant="outline" size="md" icon="i-lucide-eye-off" @click="confirm = 'deactivate'">پنهان کردن</UButton>
+          <UButton v-else size="md" icon="i-lucide-eye" @click="confirm = 'activate'">نمایش عمومی</UButton>
+        </div>
+      </AppSection>
+
+      <UModal
+        :open="Boolean(confirm)"
+        :title="confirm === 'deactivate' ? 'پنهان کردن پرونده' : 'نمایش عمومی پرونده'"
+        description="دلیل در دفتر ممیزی ثبت می‌شود."
+        @update:open="(v: boolean) => { if (!v) confirm = null }"
+      >
+        <template #body>
+          <UFormField label="دلیل" name="reason" required help="حداقل ۳ کاراکتر">
+            <UTextarea v-model="reason" class="w-full" :rows="3" autofocus />
+          </UFormField>
+          <InlineMessage :message="error" class="mt-3" />
+        </template>
+        <template #footer>
+          <div class="flex w-full justify-end gap-2">
+            <UButton color="neutral" variant="ghost" size="md" @click="confirm = null">انصراف</UButton>
+            <UButton size="md" :color="confirm === 'deactivate' ? 'error' : 'primary'" :loading="pending" :disabled="reason.trim().length < 3" @click="act">
+              {{ confirm === 'deactivate' ? 'پنهان کردن' : 'نمایش عمومی' }}
+            </UButton>
+          </div>
+        </template>
+      </UModal>
     </template>
   </div>
 </template>

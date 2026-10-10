@@ -14,6 +14,7 @@ const loadError = ref('')
 
 async function load() {
   loading.value = true
+  loadError.value = ''
   try {
     const res = await $fetch<{ data: { pet: PetDetail } }>(`/api/pets/${id.value}`)
     pet.value = res.data.pet
@@ -45,13 +46,14 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="mx-auto max-w-lg px-4 py-12">
-    <NuxtLink :to="`/pets/${id}`" class="text-sm text-ink-600">بازگشت به پرونده</NuxtLink>
-    <h1 class="mt-3 text-2xl font-semibold">ویرایش</h1>
-    <AppState v-if="loading" title="در حال بارگذاری…" />
-    <AppState v-else-if="loadError" :title="loadError" />
-    <div v-else-if="pet" class="mt-8">
-      <PetForm :pet="pet" :pending="pending" :error="error" @submit="submit" />
-    </div>
+  <div class="mx-auto max-w-content px-4 py-6 sm:px-6 sm:py-10">
+    <PageHeader
+      :title="pet ? `ویرایش ${pet.name}` : 'ویرایش'"
+      :back="{ to: `/pets/${id}`, label: 'بازگشت به پرونده' }"
+      compact
+    />
+    <SkeletonList v-if="loading" :rows="2" :avatar="false" />
+    <AppState v-else-if="loadError" variant="error" :title="loadError" retry @retry="load" />
+    <PetForm v-else-if="pet" :pet="pet" :pending="pending" :error="error" submit-label="ذخیره تغییرات" @submit="submit" />
   </div>
 </template>

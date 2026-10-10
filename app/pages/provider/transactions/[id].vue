@@ -13,6 +13,7 @@ const error = ref('')
 
 async function load() {
   loading.value = true
+  error.value = ''
   try {
     const res = await $fetch<{ data: { payment: PaymentWithTransactions } }>(`/api/payments/${id.value}`)
     payment.value = res.data.payment
@@ -28,29 +29,62 @@ async function load() {
 
 watch(id, load, { immediate: true })
 
-function toman(n: number) {
-  return `${new Intl.NumberFormat('fa-IR').format(n)} تومان`
-}
+useHead({ title: 'جزئیات تراکنش | پت‌یار' })
 </script>
 
 <template>
-  <div class="mx-auto max-w-lg px-4 py-10">
-    <NuxtLink to="/provider/transactions" class="text-sm text-ink-600">تراکنش‌ها</NuxtLink>
-    <AppState v-if="loading" title="در حال بارگذاری…" />
-    <AppState v-else-if="!payment" :title="error || 'یافت نشد'" />
+  <div class="mx-auto max-w-narrow px-4 py-6 sm:px-6 sm:py-10">
+    <PageHeader title="جزئیات تراکنش" compact :back="{ to: '/provider/transactions', label: 'تراکنش‌ها' }" />
+
+    <SkeletonList v-if="loading" :rows="2" />
+    <AppState v-else-if="!payment" variant="error" :title="error || 'یافت نشد'" retry @retry="load" />
+
     <template v-else>
-      <h1 class="mt-3 text-2xl font-semibold">{{ PAYMENT_STATUS_LABELS[payment.status] }}</h1>
-      <p class="mt-2 text-sm">ناخالص {{ toman(payment.amount) }} · کارمزد {{ toman(payment.platformFee) }} · سهم {{ toman(payment.providerPayout) }}</p>
-      <p v-if="payment.bookingId" class="mt-2 text-sm">
-        <NuxtLink :to="`/provider/bookings/${payment.bookingId}`" class="text-terracotta-700">رزرو مرتبط</NuxtLink>
-      </p>
-      <ul class="mt-8 divide-y divide-ink-100 text-sm">
-        <li v-for="tx in payment.transactions" :key="tx.id" class="flex justify-between py-2">
-          <span>{{ PAYMENT_TRANSACTION_LABELS[tx.type] }}</span>
-          <span>{{ toman(tx.amount) }}</span>
-        </li>
-      </ul>
-      <p v-if="!payment.transactions.length" class="mt-6 text-sm text-ink-500">دفترکل هنوز ردیفی ندارد (پرداخت تأیید نشده).</p>
+      <AppSection>
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="text-sm text-muted">سهم شما</p>
+            <p class="mt-1 text-3xl font-extrabold text-highlighted">{{ formatToman(payment.providerPayout) }}</p>
+          </div>
+          <StatusBadge :label="PAYMENT_STATUS_LABELS[payment.status]" :meta="PAYMENT_STATUS_META[payment.status]" class="shrink-0" />
+        </div>
+        <dl class="mt-5 space-y-2 border-t border-muted pt-4 text-sm">
+          <div class="flex justify-between gap-3">
+            <dt class="text-muted">مبلغ ناخالص</dt>
+            <dd class="font-medium text-highlighted">{{ formatToman(payment.amount) }}</dd>
+          </div>
+          <div class="flex justify-between gap-3">
+            <dt class="text-muted">کارمزد پلتفرم</dt>
+            <dd class="font-medium text-highlighted">{{ formatToman(payment.platformFee) }}</dd>
+          </div>
+          <div v-if="payment.refundedAmount" class="flex justify-between gap-3">
+            <dt class="text-muted">بازپرداخت‌شده</dt>
+            <dd class="font-medium text-highlighted">{{ formatToman(payment.refundedAmount) }}</dd>
+          </div>
+          <div v-if="payment.paidAt" class="flex justify-between gap-3">
+            <dt class="text-muted">زمان پرداخت</dt>
+            <dd class="text-highlighted">{{ formatDateTime(payment.paidAt) }}</dd>
+          </div>
+          <div v-if="payment.reference" class="flex justify-between gap-3">
+            <dt class="text-muted">کد پیگیری</dt>
+            <dd class="ltr font-mono text-xs text-highlighted">{{ payment.reference }}</dd>
+          </div>
+        </dl>
+        <UButton v-if="payment.bookingId" :to="`/provider/bookings/${payment.bookingId}`" class="mt-4" color="neutral" variant="outline" size="md" icon="i-lucide-calendar">رزرو مرتبط</UButton>
+      </AppSection>
+
+      <AppSection title="دفترکل" class="mt-6" flush>
+        <p v-if="!payment.transactions.length" class="px-4 pb-4 text-sm text-muted sm:px-5">دفترکل هنوز ردیفی ندارد (پرداخت تأیید نشده).</p>
+        <ul v-else class="divide-y divide-muted border-t border-muted text-sm">
+          <li v-for="tx in payment.transactions" :key="tx.id" class="flex items-center justify-between gap-3 px-4 py-3 sm:px-5">
+            <div class="min-w-0">
+              <p class="font-medium text-highlighted">{{ PAYMENT_TRANSACTION_LABELS[tx.type] }}</p>
+              <p class="mt-0.5 text-xs text-dimmed">{{ formatDateTime(tx.createdAt) }}</p>
+            </div>
+            <span class="shrink-0 font-semibold text-highlighted">{{ formatToman(tx.amount) }}</span>
+          </li>
+        </ul>
+      </AppSection>
     </template>
   </div>
 </template>

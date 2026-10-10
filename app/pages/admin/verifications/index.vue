@@ -7,30 +7,58 @@ definePageMeta({ middleware: ['auth', 'role'], roles: ['ADMIN'], layout: 'admin'
 
 const applications = ref<VerificationApplication[]>([])
 const error = ref('')
+const loading = ref(true)
 
-onMounted(async () => {
+async function load() {
+  loading.value = true
+  error.value = ''
   try {
     const res = await $fetch<{ data: { applications: VerificationApplication[] } }>('/api/admin/verifications')
     applications.value = res.data.applications
   }
   catch (err) {
-    error.value = apiErrorMessage(err, 'خطا')
+    error.value = apiErrorMessage(err, 'بارگذاری ناموفق بود')
   }
-})
+  finally {
+    loading.value = false
+  }
+}
+
+onMounted(load)
+
+const sorted = computed(() =>
+  [...applications.value].sort((a, b) => {
+    const rank = (s: string) => (s === 'PENDING' ? 0 : s === 'NEEDS_CHANGES' ? 1 : 2)
+    return rank(a.status) - rank(b.status) || (b.submittedAt || b.createdAt).localeCompare(a.submittedAt || a.createdAt)
+  }),
+)
+
+useHead({ title: 'احراز هویت | مدیریت پت‌یار' })
 </script>
 
 <template>
-  <div class="mx-auto max-w-3xl px-4 py-10">
-    <h1 class="text-2xl font-semibold">احراز هویت</h1>
-    <p v-if="error" class="mt-4 text-sm text-terracotta-700">{{ error }}</p>
-    <ul class="mt-6 divide-y divide-ink-100 text-sm">
-      <li v-for="item in applications" :key="item.id" class="py-3">
-        <NuxtLink :to="`/admin/verifications/${item.id}`" class="flex justify-between gap-3">
-          <span>{{ item.providerName }} · {{ item.legalName }}</span>
-          <span class="text-ink-500">{{ VERIFICATION_STATUS_LABELS[item.status] }}</span>
-        </NuxtLink>
+  <div class="max-w-content">
+    <PageHeader title="احراز هویت" description="درخواست‌های در صف بالاتر نمایش داده می‌شوند." compact />
+
+    <SkeletonList v-if="loading" :rows="4" avatar />
+    <AppState v-else-if="error" variant="error" :title="error" retry @retry="load" />
+    <AppState v-else-if="!sorted.length" icon="i-lucide-badge-check" title="درخواستی نیست" compact />
+    <ul v-else class="surface divide-y divide-muted">
+      <li v-for="item in sorted" :key="item.id">
+        <ListRow :to="`/admin/verifications/${item.id}`">
+          <template #leading>
+            <MediaThumb :initial="initialOf(item.providerName)" :alt="item.providerName" size-class="size-10" rounded="lg" />
+          </template>
+          <p class="font-semibold text-highlighted">{{ item.providerName }}</p>
+          <p class="mt-0.5 truncate text-sm text-muted">
+            {{ item.legalName || 'بدون نام حقوقی' }} · <span class="num">{{ formatNumber(item.documents.length) }}</span> مدرک
+            <template v-if="item.submittedAt"> · {{ formatRelative(item.submittedAt) }}</template>
+          </p>
+          <template #trailing>
+            <StatusBadge :label="VERIFICATION_STATUS_LABELS[item.status]" :meta="VERIFICATION_STATUS_META[item.status]" size="sm" class="shrink-0" />
+          </template>
+        </ListRow>
       </li>
     </ul>
-    <p v-if="!applications.length && !error" class="mt-6 text-sm text-ink-500">درخواستی نیست.</p>
   </div>
 </template>

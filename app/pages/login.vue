@@ -1,13 +1,19 @@
 <script setup lang="ts">
-definePageMeta({ middleware: 'guest' })
+import { apiErrorMessage } from '~/utils/api-error'
+
+definePageMeta({ middleware: 'guest', layout: 'auth' })
 
 const email = ref('')
 const password = ref('')
+const showPassword = ref(false)
 const pending = ref(false)
 const errorMessage = ref('')
 const { fetch: refreshSession } = useUserSession()
 
+const canSubmit = computed(() => email.value.trim().length > 3 && password.value.length > 0)
+
 async function submit() {
+  if (!canSubmit.value) return
   pending.value = true
   errorMessage.value = ''
   try {
@@ -19,8 +25,7 @@ async function submit() {
     await navigateTo('/account')
   }
   catch (error: unknown) {
-    const err = error as { data?: { error?: { message?: string }, data?: { error?: { message?: string } }, statusMessage?: string } }
-    errorMessage.value = err.data?.error?.message || err.data?.data?.error?.message || err.data?.statusMessage || 'ورود ناموفق بود'
+    errorMessage.value = apiErrorMessage(error, 'ورود ناموفق بود')
   }
   finally {
     pending.value = false
@@ -29,24 +34,56 @@ async function submit() {
 </script>
 
 <template>
-  <div class="mx-auto max-w-md px-4 py-12 sm:py-16">
-    <h1 class="text-2xl font-semibold">ورود به پت‌یار</h1>
-    <p class="mt-2 text-sm text-ink-600">با ایمیلی که ثبت کرده‌اید وارد شوید.</p>
+  <div class="w-full max-w-narrow">
+    <div class="surface p-5 sm:p-8">
+      <h1 class="text-2xl font-bold">ورود به پت‌یار</h1>
+      <p class="mt-1.5 text-sm leading-7 text-muted">با ایمیلی که ثبت کرده‌اید وارد شوید.</p>
 
-    <form class="mt-8 space-y-4" @submit.prevent="submit">
-      <UFormField label="ایمیل" name="email">
-        <UInput v-model="email" type="email" autocomplete="email" class="w-full" />
-      </UFormField>
-      <UFormField label="رمز عبور" name="password">
-        <UInput v-model="password" type="password" autocomplete="current-password" class="w-full" />
-      </UFormField>
-      <p v-if="errorMessage" class="text-sm text-terracotta-700">{{ errorMessage }}</p>
-      <UButton type="submit" block :loading="pending">ورود</UButton>
-    </form>
+      <form class="mt-7 space-y-5" novalidate @submit.prevent="submit">
+        <UFormField label="ایمیل" name="email" required>
+          <UInput
+            v-model="email"
+            type="email"
+            autocomplete="email"
+            inputmode="email"
+            dir="ltr"
+            class="w-full"
+            icon="i-lucide-mail"
+            placeholder="you@example.com"
+            autofocus
+          />
+        </UFormField>
+        <UFormField label="رمز عبور" name="password" required>
+          <UInput
+            v-model="password"
+            :type="showPassword ? 'text' : 'password'"
+            autocomplete="current-password"
+            dir="ltr"
+            class="w-full"
+            icon="i-lucide-lock"
+            :ui="{ trailing: 'pe-1' }"
+          >
+            <template #trailing>
+              <UButton
+                color="neutral"
+                variant="link"
+                size="sm"
+                :icon="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+                :aria-label="showPassword ? 'پنهان کردن رمز' : 'نمایش رمز'"
+                :aria-pressed="showPassword"
+                @click="showPassword = !showPassword"
+              />
+            </template>
+          </UInput>
+        </UFormField>
+        <InlineMessage :message="errorMessage" />
+        <UButton type="submit" block size="xl" :loading="pending" :disabled="!canSubmit">ورود</UButton>
+      </form>
+    </div>
 
-    <p class="mt-6 text-sm text-ink-600">
+    <p class="mt-6 text-center text-sm text-muted">
       حساب ندارید؟
-      <NuxtLink to="/register" class="text-terracotta-700 underline-offset-4 hover:underline">ثبت‌نام</NuxtLink>
+      <NuxtLink to="/register" class="font-semibold text-primary underline-offset-4 hover:underline">ثبت‌نام کنید</NuxtLink>
     </p>
   </div>
 </template>

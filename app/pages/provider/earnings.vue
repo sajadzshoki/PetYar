@@ -12,6 +12,7 @@ const error = ref('')
 
 async function load() {
   loading.value = true
+  error.value = ''
   try {
     const res = await $fetch<{ data: { earnings: ProviderEarnings, payments: Payment[] } }>('/api/provider/earnings')
     earnings.value = res.data.earnings
@@ -27,50 +28,59 @@ async function load() {
 
 onMounted(load)
 
-function toman(n: number) {
-  return `${new Intl.NumberFormat('fa-IR').format(n)} تومان`
-}
+useHead({ title: 'درآمد | پت‌یار' })
 </script>
 
 <template>
-  <div class="mx-auto max-w-2xl px-4 py-10">
-    <h1 class="text-2xl font-semibold">درآمد</h1>
-    <p class="mt-2 text-sm leading-7 text-ink-600">جمع ستون‌های پرداخت ذخیره‌شده. پیش‌بینی یا نمودار ساختگی نیست.</p>
-    <AppState v-if="loading" title="در حال بارگذاری…" />
-    <p v-else-if="error" class="mt-4 text-sm text-terracotta-700">{{ error }}</p>
+  <div class="mx-auto max-w-content px-4 py-6 sm:px-6 sm:py-10">
+    <PageHeader title="درآمد" description="جمع ستون‌های پرداخت ذخیره‌شده. پیش‌بینی یا نمودار ساختگی نیست." />
+
+    <SkeletonList v-if="loading" :rows="3" />
+    <AppState v-else-if="error" variant="error" :title="error" retry @retry="load" />
+
     <template v-else-if="earnings">
-      <dl class="mt-8 space-y-2 text-sm leading-7">
-        <div class="flex justify-between gap-4">
-          <dt>مبلغ ناخالص پرداخت‌شده</dt>
-          <dd>{{ toman(earnings.grossPaid) }}</dd>
-        </div>
-        <div class="flex justify-between gap-4">
-          <dt>کارمزد پلتفرم</dt>
-          <dd>{{ toman(earnings.platformFees) }}</dd>
-        </div>
-        <div class="flex justify-between gap-4 font-medium">
-          <dt>سهم ارائه‌دهنده</dt>
-          <dd>{{ toman(earnings.providerEarnings) }}</dd>
-        </div>
-        <div class="flex justify-between gap-4 text-ink-600">
-          <dt>بازپرداخت‌شده</dt>
-          <dd>{{ toman(earnings.refunded) }}</dd>
-        </div>
-        <div class="flex justify-between gap-4 text-ink-600">
-          <dt>در انتظار پرداخت مشتری</dt>
-          <dd>{{ toman(earnings.unpaid) }}</dd>
-        </div>
-      </dl>
-      <p class="mt-4 text-xs text-ink-400">{{ earnings.paidCount }} پرداخت تأییدشده · {{ earnings.unpaidCount }} ناتمام</p>
-      <ul class="mt-8 divide-y divide-ink-100">
-        <li v-for="p in payments" :key="p.id" class="py-3 text-sm">
-          <NuxtLink :to="`/provider/transactions/${p.id}`" class="flex justify-between gap-3">
-            <span>{{ PAYMENT_STATUS_LABELS[p.status] }}</span>
-            <span>{{ toman(p.providerPayout) }}</span>
-          </NuxtLink>
-        </li>
-      </ul>
-      <p v-if="!payments.length" class="mt-6 text-sm text-ink-500">پرداختی ثبت نشده.</p>
+      <AppSection>
+        <p class="text-sm text-muted">سهم شما (پس از کارمزد)</p>
+        <p class="mt-1 text-3xl font-extrabold text-highlighted">{{ formatToman(earnings.providerEarnings) }}</p>
+        <p class="mt-1 text-xs text-dimmed">
+          <span class="num">{{ formatNumber(earnings.paidCount) }}</span> پرداخت تأییدشده · <span class="num">{{ formatNumber(earnings.unpaidCount) }}</span> ناتمام
+        </p>
+        <dl class="mt-5 grid grid-cols-2 gap-3 border-t border-muted pt-4 text-sm sm:grid-cols-4">
+          <div class="rounded-lg bg-canvas-deep p-3">
+            <dt class="text-xs text-muted">مبلغ ناخالص پرداخت‌شده</dt>
+            <dd class="mt-1 font-bold text-highlighted">{{ formatToman(earnings.grossPaid) }}</dd>
+          </div>
+          <div class="rounded-lg bg-canvas-deep p-3">
+            <dt class="text-xs text-muted">کارمزد پلتفرم</dt>
+            <dd class="mt-1 font-bold text-highlighted">{{ formatToman(earnings.platformFees) }}</dd>
+          </div>
+          <div class="rounded-lg bg-canvas-deep p-3">
+            <dt class="text-xs text-muted">بازپرداخت‌شده</dt>
+            <dd class="mt-1 font-bold text-highlighted">{{ formatToman(earnings.refunded) }}</dd>
+          </div>
+          <div class="rounded-lg bg-canvas-deep p-3">
+            <dt class="text-xs text-muted">در انتظار پرداخت مشتری</dt>
+            <dd class="mt-1 font-bold text-highlighted">{{ formatToman(earnings.unpaid) }}</dd>
+          </div>
+        </dl>
+      </AppSection>
+
+      <AppSection title="پرداخت‌ها" class="mt-6" flush>
+        <p v-if="!payments.length" class="px-4 pb-4 text-sm text-muted sm:px-5">پرداختی ثبت نشده.</p>
+        <ul v-else class="divide-y divide-muted border-t border-muted">
+          <li v-for="p in payments" :key="p.id">
+            <ListRow :to="`/provider/transactions/${p.id}`">
+              <div class="flex items-center justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="font-semibold text-highlighted">{{ formatToman(p.providerPayout) }}</p>
+                  <p class="mt-0.5 text-xs text-dimmed">{{ formatDateTime(p.paidAt || p.createdAt) }}</p>
+                </div>
+                <StatusBadge :label="PAYMENT_STATUS_LABELS[p.status]" :meta="PAYMENT_STATUS_META[p.status]" size="sm" class="shrink-0" />
+              </div>
+            </ListRow>
+          </li>
+        </ul>
+      </AppSection>
     </template>
   </div>
 </template>

@@ -4,11 +4,23 @@
   "description": "بازار خدمات حیوانات خانگی",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f7f3ee",
-  "theme_color": "#c45c3e",
+  "background_color": "#f8f4ee",
+  "theme_color": "#f8f4ee",
   "lang": "fa",
   "dir": "rtl",
   "icons": [
+    {
+      "src": "/brand/petyar-mark-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/brand/petyar-mark-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "/favicon.svg",
       "sizes": "any",

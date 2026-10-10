@@ -27,6 +27,8 @@ const result = ref<SearchPage<ProviderSearchHit> | SearchPage<ServiceSearchHit> 
 const loading = ref(true)
 const error = ref('')
 const geoError = ref('')
+const geoPending = ref(false)
+const filtersOpen = ref(false)
 
 const sortItems = SEARCH_SORTS.map(value => ({ label: SEARCH_SORT_LABELS[value], value }))
 const cityItems = computed(() => [
@@ -40,6 +42,13 @@ const districtItems = computed(() => [
 
 const providerItems = computed(() => (result.value?.view === 'providers' ? result.value.items as ProviderSearchHit[] : []))
 const serviceItems = computed(() => (result.value?.view === 'services' ? result.value.items as ServiceSearchHit[] : []))
+
+const activeCategory = computed(() => categories.value.find(c => c.id === category.value) || null)
+const hasLocation = computed(() => Boolean(lat.value && lng.value))
+const activeFilterCount = computed(() =>
+  [city.value, district.value, priceMin.value, priceMax.value, sort.value !== 'newest' ? sort.value : ''].filter(Boolean).length,
+)
+const hasAnyFilter = computed(() => activeFilterCount.value > 0 || Boolean(q.value || category.value || hasLocation.value))
 
 function readRoute() {
   q.value = String(route.query.q || '')
@@ -109,6 +118,26 @@ function submit() {
   pushQuery({ page: undefined })
 }
 
+function applyFilters() {
+  filtersOpen.value = false
+  submit()
+}
+
+function resetFilters() {
+  city.value = ''
+  district.value = ''
+  priceMin.value = ''
+  priceMax.value = ''
+  sort.value = hasLocation.value ? 'distance' : 'newest'
+  applyFilters()
+}
+
+function setCategory(id: string) {
+  category.value = id
+  page.value = 1
+  pushQuery({ category: id || undefined, page: undefined })
+}
+
 function setView(next: 'providers' | 'services') {
   view.value = next
   page.value = 1
@@ -120,16 +149,19 @@ function goPage(next: number) {
   if (next < 1 || next > result.value.totalPages) return
   page.value = next
   pushQuery({ page: next > 1 ? next : undefined })
+  if (import.meta.client) window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-async function nearMe() {
+function nearMe() {
   geoError.value = ''
   if (!navigator.geolocation) {
-    geoError.value = 'موقعیت‌یاب در این مرورگر نیست'
+    geoError.value = 'موقعیت‌یاب در این مرورگر در دسترس نیست'
     return
   }
+  geoPending.value = true
   navigator.geolocation.getCurrentPosition(
     (pos) => {
+      geoPending.value = false
       lat.value = pos.coords.latitude.toFixed(5)
       lng.value = pos.coords.longitude.toFixed(5)
       if (!radiusKm.value) radiusKm.value = '15'
@@ -138,6 +170,7 @@ async function nearMe() {
       pushQuery({ page: undefined, sort: 'distance' })
     },
     () => {
+      geoPending.value = false
       geoError.value = 'اجازه دسترسی به موقعیت داده نشد'
     },
     { timeout: 8000 },
@@ -153,137 +186,250 @@ function clearNear() {
   pushQuery({ lat: undefined, lng: undefined, radiusKm: undefined, page: undefined })
 }
 
-function formatPrice(value: number | null) {
-  if (value == null) return null
-  return `${new Intl.NumberFormat('fa-IR').format(value)} تومان`
+function clearAll() {
+  router.replace('/providers')
 }
 
 onMounted(async () => {
-  const [catRes, facetRes] = await Promise.all([
+  const [catRes, facetRes] = await Promise.allSettled([
     $fetch<{ data: { categories: ServiceCategory[] } }>('/api/service-categories'),
     $fetch<{ data: { facets: SearchFacets } }>('/api/discovery/facets'),
   ])
-  categories.value = catRes.data.categories
-  facets.value = facetRes.data.facets
+  if (catRes.status === 'fulfilled') categories.value = catRes.value.data.categories
+  if (facetRes.status === 'fulfilled') facets.value = facetRes.value.data.facets
 })
 
 watch(() => route.query, load, { immediate: true, deep: true })
+
+useHead({ title: 'جستجوی ارائه‌دهندگان | پت‌یار' })
 </script>
 
 <template>
   <div>
-    <section class="border-b border-ink-200 bg-paper">
-      <div class="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
-        <p class="text-sm text-forest-700">کشف خدمات</p>
-        <h1 class="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">چه کمکی لازم دارید؟</h1>
-        <p class="mt-3 max-w-md text-sm leading-7 text-ink-600">
-          جستجو روی داده‌های واقعی ارائه‌دهندگان است. امتیاز و رزرو هنوز ساخته نشده.
-        </p>
-        <form class="mt-6 flex gap-2" @submit.prevent="submit">
-          <UInput v-model="q" class="flex-1" placeholder="نام، شهر، یا نوع خدمت" />
-          <UButton type="submit">جستجو</UButton>
+    <!-- Search bar -->
+    <section class="border-b border-default bg-paper">
+      <div class="mx-auto max-w-content px-4 pb-4 pt-5 sm:px-6 sm:pt-8">
+        <h1 class="text-xl sm:text-2xl">چه کمکی لازم دارید؟</h1>
+        <form class="mt-3 flex gap-2" role="search" @submit.prevent="submit">
+          <UInput
+            v-model="q"
+            class="flex-1"
+            icon="i-lucide-search"
+            placeholder="نام، شهر یا نوع خدمت"
+            aria-label="جستجو"
+            :ui="{ trailing: 'pe-1' }"
+          >
+            <template v-if="q" #trailing>
+              <UButton color="neutral" variant="link" size="sm" icon="i-lucide-x" aria-label="پاک کردن جستجو" @click="q = ''; submit()" />
+            </template>
+          </UInput>
+          <UButton type="submit" class="shrink-0" icon="i-lucide-search" aria-label="جستجو">
+            <span class="hidden sm:inline">جستجو</span>
+          </UButton>
         </form>
+
+        <!-- Category chips -->
+        <div class="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1 scrollbar-none sm:-mx-6 sm:px-6" role="tablist" aria-label="دسته‌ها">
+          <button
+            type="button"
+            role="tab"
+            :aria-selected="!category"
+            class="flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors"
+            :class="!category ? 'border-primary bg-forest-50 text-primary' : 'border-default bg-paper text-toned hover:border-accented'"
+            @click="setCategory('')"
+          >
+            همه
+          </button>
+          <button
+            v-for="cat in categories"
+            :key="cat.id"
+            type="button"
+            role="tab"
+            :aria-selected="category === cat.id"
+            class="flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium transition-colors"
+            :class="category === cat.id ? 'border-primary bg-forest-50 text-primary' : 'border-default bg-paper text-toned hover:border-accented'"
+            @click="setCategory(cat.id)"
+          >
+            <UIcon :name="categoryIcon(cat.slug)" class="size-4" aria-hidden="true" />
+            {{ cat.name }}
+          </button>
+        </div>
       </div>
     </section>
 
-    <div class="mx-auto max-w-3xl px-4 py-6 sm:px-6">
-      <div class="flex gap-2 overflow-x-auto pb-2 text-sm">
-        <button
-          type="button"
-          class="shrink-0 border-b-2 px-1 pb-1"
-          :class="!category ? 'border-terracotta-500 text-ink-900' : 'border-transparent text-ink-500'"
-          @click="category = ''; page = 1; pushQuery({ category: undefined, page: undefined })"
-        >
-          همه
-        </button>
-        <button
-          v-for="cat in categories"
-          :key="cat.id"
-          type="button"
-          class="shrink-0 border-b-2 px-1 pb-1"
-          :class="category === cat.id ? 'border-terracotta-500 text-ink-900' : 'border-transparent text-ink-500'"
-          @click="category = cat.id; page = 1; pushQuery({ page: undefined })"
-        >
-          {{ cat.name }}
-        </button>
-      </div>
+    <div class="mx-auto max-w-content px-4 py-4 sm:px-6 sm:py-6">
+      <!-- Toolbar -->
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="flex rounded-lg bg-canvas-deep p-1" role="tablist" aria-label="نوع نتیجه">
+          <button
+            type="button"
+            role="tab"
+            :aria-selected="view === 'providers'"
+            class="min-h-9 rounded-md px-3.5 text-sm font-semibold transition-colors"
+            :class="view === 'providers' ? 'bg-paper text-highlighted shadow-card' : 'text-muted hover:text-highlighted'"
+            @click="setView('providers')"
+          >
+            ارائه‌دهنده
+          </button>
+          <button
+            type="button"
+            role="tab"
+            :aria-selected="view === 'services'"
+            class="min-h-9 rounded-md px-3.5 text-sm font-semibold transition-colors"
+            :class="view === 'services' ? 'bg-paper text-highlighted shadow-card' : 'text-muted hover:text-highlighted'"
+            @click="setView('services')"
+          >
+            خدمت
+          </button>
+        </div>
 
-      <div class="mt-5 grid gap-3 sm:grid-cols-2">
-        <USelect v-model="city" :items="cityItems" class="w-full" @update:model-value="page = 1; pushQuery({ page: undefined })" />
-        <USelect v-model="district" :items="districtItems" class="w-full" @update:model-value="page = 1; pushQuery({ page: undefined })" />
-        <UInput v-model="priceMin" placeholder="حداقل قیمت (تومان)" dir="ltr" class="w-full" @change="submit" />
-        <UInput v-model="priceMax" placeholder="حداکثر قیمت (تومان)" dir="ltr" class="w-full" @change="submit" />
-        <USelect v-model="sort" :items="sortItems" class="w-full" @update:model-value="pushQuery()" />
-        <div class="flex items-center gap-2">
-          <UButton size="sm" color="neutral" variant="outline" @click="nearMe">نزدیک من</UButton>
-          <UButton v-if="lat && lng" size="sm" color="neutral" variant="ghost" @click="clearNear">حذف موقعیت</UButton>
+        <div class="ms-auto flex items-center gap-2">
+          <UButton
+            v-if="!hasLocation"
+            size="md"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-locate"
+            :loading="geoPending"
+            @click="nearMe"
+          >
+            نزدیک من
+          </UButton>
+          <UButton
+            v-else
+            size="md"
+            color="primary"
+            variant="soft"
+            icon="i-lucide-locate"
+            trailing-icon="i-lucide-x"
+            aria-label="حذف فیلتر موقعیت"
+            @click="clearNear"
+          >
+            نزدیک من · <span class="num">{{ formatNumber(radiusKm || 15) }}</span> کیلومتر
+          </UButton>
+          <UButton size="md" color="neutral" variant="outline" icon="i-lucide-sliders-horizontal" @click="filtersOpen = true">
+            فیلترها
+            <UBadge v-if="activeFilterCount" color="primary" size="sm" class="num rounded-full">{{ formatNumber(activeFilterCount) }}</UBadge>
+          </UButton>
         </div>
       </div>
-      <p v-if="geoError" class="mt-2 text-sm text-terracotta-700">{{ geoError }}</p>
-      <p v-if="lat && lng" class="mt-2 text-xs text-ink-500" dir="ltr">{{ lat }}, {{ lng }} · {{ radiusKm || 15 }} km</p>
+      <InlineMessage :message="geoError" kind="warning" class="mt-3" />
 
-      <div class="mt-6 flex gap-4 text-sm">
-        <button type="button" :class="view === 'providers' ? 'text-ink-900' : 'text-ink-500'" @click="setView('providers')">ارائه‌دهنده</button>
-        <button type="button" :class="view === 'services' ? 'text-ink-900' : 'text-ink-500'" @click="setView('services')">خدمت</button>
+      <!-- Results -->
+      <div class="mt-4">
+        <SkeletonList v-if="loading" :rows="4" />
+        <AppState v-else-if="error" variant="error" :title="error" description="اتصال را بررسی کنید و دوباره تلاش کنید." retry @retry="load" />
+        <AppState
+          v-else-if="result && result.total === 0"
+          icon="i-lucide-search-x"
+          title="نتیجه‌ای پیدا نشد"
+          :description="hasAnyFilter ? 'عبارت یا فیلترها را تغییر دهید.' : 'هنوز ارائه‌دهنده فعالی ثبت نشده است.'"
+        >
+          <UButton v-if="hasAnyFilter" color="neutral" variant="outline" size="md" icon="i-lucide-x" @click="clearAll">پاک کردن فیلترها</UButton>
+        </AppState>
+
+        <template v-else-if="result">
+          <p class="mb-3 text-sm text-muted" aria-live="polite">
+            <span class="num">{{ formatNumber(result.total) }}</span>
+            {{ result.view === 'providers' ? 'ارائه‌دهنده' : 'خدمت' }}
+            <template v-if="activeCategory"> در «{{ activeCategory.name }}»</template>
+          </p>
+
+          <ul v-if="result.view === 'providers'" class="grid gap-3">
+            <li v-for="item in providerItems" :key="item.id">
+              <ProviderCard :item="item" />
+            </li>
+          </ul>
+
+          <ul v-else class="grid gap-3">
+            <li v-for="item in serviceItems" :key="item.id">
+              <NuxtLink
+                :to="`/providers/${item.providerId}`"
+                class="pressable surface group flex gap-3.5 p-3.5 transition-colors hover:border-forest-300 sm:p-4"
+              >
+                <MediaThumb :src="item.photoUrl" :initial="initialOf(item.providerName)" size-class="size-16 sm:size-20" rounded="xl" />
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-semibold text-primary">{{ item.categoryName }}</p>
+                  <h2 class="mt-0.5 truncate text-base font-bold text-highlighted">{{ item.title }}</h2>
+                  <p class="mt-0.5 truncate text-sm text-muted">
+                    {{ item.providerName }}<template v-if="item.city || item.district"> · {{ [item.city, item.district].filter(Boolean).join('، ') }}</template>
+                  </p>
+                  <p class="mt-2 text-sm">
+                    <span v-if="item.price != null" class="font-semibold text-highlighted">
+                      <span class="num">{{ formatNumber(item.price) }}</span> تومان
+                      <span class="font-normal text-muted">· {{ PRICING_TYPE_LABELS[item.pricingType] }}</span>
+                    </span>
+                    <span v-else class="font-medium text-toned">{{ PRICING_TYPE_LABELS[item.pricingType] }}</span>
+                    <span v-if="item.durationMinutes" class="text-muted"> · <span class="num">{{ formatNumber(item.durationMinutes) }}</span> دقیقه</span>
+                  </p>
+                </div>
+                <UIcon name="i-lucide-chevron-left" class="mt-1 size-4 shrink-0 text-ink-300 transition-colors group-hover:text-ink-500" aria-hidden="true" />
+              </NuxtLink>
+            </li>
+          </ul>
+
+          <nav v-if="result.totalPages > 1" class="mt-6 flex items-center justify-between gap-3" aria-label="صفحه‌بندی">
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="md"
+              icon="i-lucide-chevron-right"
+              :disabled="result.page <= 1"
+              @click="goPage(result.page - 1)"
+            >
+              قبلی
+            </UButton>
+            <span class="text-sm text-muted">
+              صفحه <span class="num">{{ formatNumber(result.page) }}</span> از <span class="num">{{ formatNumber(result.totalPages) }}</span>
+            </span>
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="md"
+              trailing-icon="i-lucide-chevron-left"
+              :disabled="result.page >= result.totalPages"
+              @click="goPage(result.page + 1)"
+            >
+              بعدی
+            </UButton>
+          </nav>
+        </template>
       </div>
-
-      <AppState v-if="loading" title="در حال جستجو…" />
-      <AppState v-else-if="error" :title="error" />
-      <AppState
-        v-else-if="result && result.total === 0"
-        title="نتیجه‌ای پیدا نشد"
-        description="عبارت یا فیلترها را تغییر دهید."
-      >
-        <UButton color="neutral" variant="outline" @click="router.replace('/providers')">پاک کردن فیلترها</UButton>
-      </AppState>
-
-      <template v-else-if="result">
-        <p class="mt-6 text-sm text-ink-500">{{ result.total }} نتیجه</p>
-
-        <ul v-if="result.view === 'providers'" class="mt-4 divide-y divide-ink-200 border-t border-ink-200">
-          <li v-for="item in providerItems" :key="item.id">
-            <NuxtLink :to="`/providers/${item.id}`" class="flex gap-4 py-5">
-              <div class="h-24 w-24 shrink-0 overflow-hidden bg-canvas-deep ring-1 ring-ink-200 sm:h-28 sm:w-28">
-                <img v-if="item.photoUrl" :src="item.photoUrl" alt="" class="h-full w-full object-cover">
-              </div>
-              <div class="min-w-0">
-                <h2 class="font-medium">{{ item.displayName }}</h2>
-                <p v-if="item.reviewCount" class="mt-1 text-sm text-ink-700">{{ item.ratingAverage }} از ۵ · {{ item.reviewCount }} نظر</p>
-                <p class="mt-1 text-sm text-ink-600">
-                  {{ [item.city, item.district].filter(Boolean).join('، ') || item.serviceArea || 'محدوده اعلام نشده' }}
-                </p>
-                <p v-if="item.serviceTitles.length" class="mt-2 text-sm text-ink-700">{{ item.serviceTitles.join('، ') }}</p>
-                <p v-if="formatPrice(item.minPrice)" class="mt-2 text-sm">از {{ formatPrice(item.minPrice) }}</p>
-                <p v-if="item.distanceKm != null" class="mt-1 text-xs text-ink-500">{{ item.distanceKm.toFixed(1) }} کیلومتر</p>
-              </div>
-            </NuxtLink>
-          </li>
-        </ul>
-
-        <ul v-else class="mt-4 divide-y divide-ink-200 border-t border-ink-200">
-          <li v-for="item in serviceItems" :key="item.id">
-            <NuxtLink :to="`/providers/${item.providerId}`" class="flex gap-4 py-5">
-              <div class="h-20 w-20 shrink-0 overflow-hidden bg-canvas-deep ring-1 ring-ink-200">
-                <img v-if="item.photoUrl" :src="item.photoUrl" alt="" class="h-full w-full object-cover">
-              </div>
-              <div class="min-w-0">
-                <p class="text-xs text-forest-700">{{ item.categoryName }}</p>
-                <h2 class="mt-1 font-medium">{{ item.title }}</h2>
-                <p class="mt-1 text-sm text-ink-600">{{ item.providerName }} · {{ [item.city, item.district].filter(Boolean).join('، ') }}</p>
-                <p class="mt-2 text-sm">
-                  {{ formatPrice(item.price) || PRICING_TYPE_LABELS[item.pricingType] }}
-                </p>
-              </div>
-            </NuxtLink>
-          </li>
-        </ul>
-
-        <nav v-if="result.totalPages > 1" class="mt-8 flex items-center justify-between text-sm">
-          <button type="button" class="text-ink-600 disabled:text-ink-300" :disabled="result.page <= 1" @click="goPage(result.page - 1)">قبلی</button>
-          <span class="text-ink-500">صفحه {{ result.page }} از {{ result.totalPages }}</span>
-          <button type="button" class="text-ink-600 disabled:text-ink-300" :disabled="result.page >= result.totalPages" @click="goPage(result.page + 1)">بعدی</button>
-        </nav>
-      </template>
     </div>
+
+    <!-- Filters sheet -->
+    <USlideover
+      v-model:open="filtersOpen"
+      title="فیلترها"
+      description="نتایج را دقیق‌تر کنید"
+      side="bottom"
+      :ui="{ content: 'max-h-[90dvh] rounded-t-2xl sm:max-w-content sm:mx-auto', body: 'pb-safe' }"
+    >
+      <template #body>
+        <form class="space-y-5" @submit.prevent="applyFilters">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <UFormField label="شهر">
+              <USelect v-model="city" :items="cityItems" class="w-full" />
+            </UFormField>
+            <UFormField label="محله">
+              <USelect v-model="district" :items="districtItems" class="w-full" />
+            </UFormField>
+            <UFormField label="حداقل قیمت (تومان)">
+              <UInput v-model="priceMin" type="number" min="0" inputmode="numeric" dir="ltr" class="w-full" placeholder="0" />
+            </UFormField>
+            <UFormField label="حداکثر قیمت (تومان)">
+              <UInput v-model="priceMax" type="number" min="0" inputmode="numeric" dir="ltr" class="w-full" placeholder="1,000,000" />
+            </UFormField>
+            <UFormField label="مرتب‌سازی" class="sm:col-span-2">
+              <USelect v-model="sort" :items="sortItems" class="w-full" />
+            </UFormField>
+          </div>
+          <div class="flex items-center justify-between gap-2 pt-1">
+            <UButton type="button" color="neutral" variant="ghost" icon="i-lucide-x" @click="resetFilters">حذف فیلترها</UButton>
+            <UButton type="submit" icon="i-lucide-check">اعمال</UButton>
+          </div>
+        </form>
+      </template>
+    </USlideover>
   </div>
 </template>

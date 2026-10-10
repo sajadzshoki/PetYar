@@ -6,59 +6,134 @@ import { apiErrorMessage } from '~/utils/api-error'
 definePageMeta({ middleware: ['auth', 'role'], roles: ['ADMIN'], layout: 'admin' })
 
 const route = useRoute()
+const toast = useToast()
 const application = ref<VerificationApplication | null>(null)
 const note = ref('')
 const error = ref('')
-const pending = ref(false)
+const loadError = ref('')
+const loading = ref(true)
+const pending = ref<string | null>(null)
+const preview = ref<string | null>(null)
+
+const previewOpen = computed({
+  get: () => Boolean(preview.value),
+  set: (v: boolean) => {
+    if (!v) preview.value = null
+  },
+})
 
 async function load() {
-  const res = await $fetch<{ data: { application: VerificationApplication } }>(`/api/admin/verifications/${route.params.id}`)
-  application.value = res.data.application
-}
-
-async function act(path: string) {
-  pending.value = true
-  error.value = ''
+  loading.value = true
+  loadError.value = ''
   try {
-    const res = await $fetch<{ data: { application: VerificationApplication } }>(path, { method: 'POST', body: { note: note.value } })
+    const res = await $fetch<{ data: { application: VerificationApplication } }>(`/api/admin/verifications/${route.params.id}`)
     application.value = res.data.application
   }
   catch (err) {
-    error.value = apiErrorMessage(err, 'خطا')
+    loadError.value = apiErrorMessage(err, 'درخواست یافت نشد')
   }
   finally {
-    pending.value = false
+    loading.value = false
   }
 }
 
+async function act(action: 'approve' | 'request-changes' | 'reject') {
+  if (!application.value) return
+  pending.value = action
+  error.value = ''
+  try {
+    const res = await $fetch<{ data: { application: VerificationApplication } }>(`/api/admin/verifications/${application.value.id}/${action}`, { method: 'POST', body: { note: note.value } })
+    application.value = res.data.application
+    toast.add({ title: 'تصمیم ثبت شد', icon: 'i-lucide-check', color: 'success' })
+    note.value = ''
+  }
+  catch (err) {
+    error.value = apiErrorMessage(err, 'انجام نشد')
+  }
+  finally {
+    pending.value = null
+  }
+}
+
+const reviewable = computed(() => application.value?.status === 'PENDING' || application.value?.status === 'NEEDS_CHANGES')
+
 onMounted(load)
+
+useHead(() => ({ title: `${application.value?.providerName || 'احراز هویت'} | مدیریت پت‌یار` }))
 </script>
 
 <template>
-  <div class="mx-auto max-w-lg px-4 py-10">
-    <NuxtLink to="/admin/verifications" class="text-sm text-ink-600">احراز</NuxtLink>
-    <template v-if="application">
-      <h1 class="mt-3 text-2xl font-semibold">{{ application.providerName }}</h1>
-      <p class="mt-2 text-sm">{{ VERIFICATION_STATUS_LABELS[application.status] }}</p>
-      <dl class="mt-6 space-y-2 text-sm">
-        <div class="flex justify-between gap-4"><dt>نام حقوقی</dt><dd>{{ application.legalName }}</dd></div>
-        <div class="flex justify-between gap-4"><dt>کد ملی</dt><dd dir="ltr">{{ application.nationalId }}</dd></div>
-        <div v-if="application.city" class="flex justify-between gap-4"><dt>شهر</dt><dd>{{ application.city }}</dd></div>
-      </dl>
-      <p v-if="application.notes" class="mt-4 text-sm leading-7">{{ application.notes }}</p>
-      <div class="mt-6 grid grid-cols-2 gap-2">
-        <a v-for="doc in application.documents" :key="doc.id" :href="doc.imageUrl" target="_blank" class="block">
-          <img :src="doc.imageUrl" alt="" class="h-28 w-full object-cover ring-1 ring-ink-200">
-          <p class="mt-1 text-xs">{{ VERIFICATION_DOCUMENT_LABELS[doc.kind] }}</p>
-        </a>
-      </div>
-      <UTextarea v-model="note" class="mt-6 w-full" placeholder="یادداشت برای ارائه‌دهنده" />
-      <p v-if="error" class="mt-2 text-sm text-terracotta-700">{{ error }}</p>
-      <div class="mt-4 flex flex-wrap gap-2">
-        <UButton :loading="pending" @click="act(`/api/admin/verifications/${application.id}/approve`)">تأیید</UButton>
-        <UButton :loading="pending" color="neutral" variant="outline" @click="act(`/api/admin/verifications/${application.id}/request-changes`)">اصلاح بخواه</UButton>
-        <UButton :loading="pending" color="neutral" variant="ghost" @click="act(`/api/admin/verifications/${application.id}/reject`)">رد</UButton>
-      </div>
+  <div class="max-w-content">
+    <PageHeader :title="application?.providerName || 'درخواست احراز هویت'" compact :back="{ to: '/admin/verifications', label: 'احراز هویت' }">
+      <template v-if="application" #meta>
+        <div class="mt-3">
+          <StatusBadge :label="VERIFICATION_STATUS_LABELS[application.status]" :meta="VERIFICATION_STATUS_META[application.status]" />
+        </div>
+      </template>
+      <template v-if="application" #actions>
+        <UButton :to="`/providers/${application.providerId}`" color="neutral" variant="outline" size="md" icon="i-lucide-eye">صفحه عمومی</UButton>
+      </template>
+    </PageHeader>
+
+    <SkeletonList v-if="loading" :rows="3" />
+    <AppState v-else-if="loadError" variant="error" :title="loadError" retry @retry="load" />
+
+    <template v-else-if="application">
+      <AppSection title="مشخصات اعلام‌شده">
+        <dl class="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+          <div>
+            <dt class="text-xs text-muted">نام حقوقی</dt>
+            <dd class="font-medium text-highlighted">{{ application.legalName || '—' }}</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-muted">کد ملی</dt>
+            <dd class="font-medium text-highlighted"><span v-if="application.nationalId" class="num">{{ application.nationalId }}</span><span v-else>—</span></dd>
+          </div>
+          <div>
+            <dt class="text-xs text-muted">شهر</dt>
+            <dd class="font-medium text-highlighted">{{ application.city || '—' }}</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-muted">ارسال‌شده</dt>
+            <dd class="font-medium text-highlighted">{{ application.submittedAt ? formatDateTime(application.submittedAt) : '—' }}</dd>
+          </div>
+        </dl>
+        <p v-if="application.notes" class="mt-4 rounded-lg bg-canvas-deep p-3 text-sm leading-7 text-default">{{ application.notes }}</p>
+        <p v-if="application.reviewNote" class="mt-3 text-sm text-muted">یادداشت قبلی مدیر: {{ application.reviewNote }}</p>
+      </AppSection>
+
+      <AppSection title="مدارک" class="mt-6">
+        <p v-if="!application.documents.length" class="text-sm text-muted">مدرکی بارگذاری نشده.</p>
+        <ul v-else class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <li v-for="doc in application.documents" :key="doc.id">
+            <button type="button" class="block w-full overflow-hidden rounded-lg ring-1 ring-default focus-visible:ring-2 focus-visible:ring-primary" aria-label="نمایش بزرگ مدرک" @click="preview = doc.imageUrl">
+              <img :src="doc.imageUrl" alt="" class="aspect-[4/3] w-full object-cover" loading="lazy">
+              <span class="block bg-canvas px-2 py-1.5 text-start text-xs font-medium text-default">{{ VERIFICATION_DOCUMENT_LABELS[doc.kind] }}</span>
+            </button>
+          </li>
+        </ul>
+      </AppSection>
+
+      <AppSection v-if="reviewable" title="تصمیم" description="یادداشت برای ارائه‌دهنده نمایش داده می‌شود؛ برای رد یا درخواست اصلاح حتماً بنویسید." class="mt-6">
+        <UFormField label="یادداشت برای ارائه‌دهنده" name="note">
+          <UTextarea v-model="note" class="w-full" :rows="3" />
+        </UFormField>
+        <InlineMessage :message="error" class="mt-3" />
+        <div class="mt-4 flex flex-wrap gap-2">
+          <UButton icon="i-lucide-badge-check" :loading="pending === 'approve'" :disabled="Boolean(pending)" @click="act('approve')">تأیید</UButton>
+          <UButton color="warning" variant="soft" icon="i-lucide-pencil-line" :loading="pending === 'request-changes'" :disabled="Boolean(pending)" @click="act('request-changes')">اصلاح بخواه</UButton>
+          <UButton color="error" variant="outline" icon="i-lucide-shield-x" :loading="pending === 'reject'" :disabled="Boolean(pending)" @click="act('reject')">رد</UButton>
+        </div>
+      </AppSection>
+
+      <UModal v-model:open="previewOpen" title="مدرک" :ui="{ content: 'sm:max-w-3xl bg-ink-950' }">
+        <template #content>
+          <div class="relative">
+            <img v-if="preview" :src="preview" alt="" class="max-h-[85dvh] w-full object-contain">
+            <UButton color="neutral" variant="solid" icon="i-lucide-x" size="md" square class="absolute end-3 top-3" aria-label="بستن" @click="preview = null" />
+          </div>
+        </template>
+      </UModal>
     </template>
   </div>
 </template>

@@ -11,13 +11,20 @@ export default defineNuxtConfig({
       meta: [
         { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
         { name: 'description', content: 'پت‌یار، بازار خدمات حیوانات خانگی در ایران — واکسیناسیون، نگهداری، آرایش و مراقبت با ارائه‌دهندگان تأییدشده.' },
-        { name: 'theme-color', content: '#c45c3e' },
+        { name: 'theme-color', content: '#f8f4ee' },
+        { name: 'apple-mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
+        { name: 'apple-mobile-web-app-title', content: 'پت‌یار' },
       ],
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+        { rel: 'apple-touch-icon', href: '/brand/petyar-mark-192.png' },
         { rel: 'manifest', href: '/manifest.webmanifest' },
+        // Self-hosted Vazirmatn (SIL OFL). Preloaded so Persian text never flashes a fallback.
+        { rel: 'preload', as: 'font', type: 'font/woff2', href: '/fonts/Vazirmatn-Variable.woff2', crossorigin: 'anonymous' },
       ],
     },
+    pageTransition: { name: 'page', mode: 'out-in' },
   },
   css: ['~/assets/css/main.css'],
   ui: {
@@ -77,6 +84,12 @@ export default defineNuxtConfig({
     },
   },
   fonts: {
+    // Vazirmatn is self-hosted from public/fonts (see app/assets/css/main.css).
+    // `provider: 'none'` stops @nuxt/fonts from trying to download it from Google Fonts,
+    // which is unreliable (or blocked) for many Iranian users and build machines.
+    families: [
+      { name: 'Vazirmatn', provider: 'none' },
+    ],
     defaults: {
       weights: [400, 500, 600, 700],
       styles: ['normal'],

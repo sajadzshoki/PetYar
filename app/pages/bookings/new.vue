@@ -44,6 +44,7 @@ async function load() {
     provider.value = p.data.provider
     pets.value = petRes.data.pets.filter(x => !x.archivedAt)
     if (!serviceId.value && provider.value.services[0]) serviceId.value = provider.value.services[0].id
+    if (pets.value.length === 1 && pets.value[0]) petId.value = pets.value[0].id
     const from = new Date().toISOString().slice(0, 10)
     const toDate = new Date()
     toDate.setUTCDate(toDate.getUTCDate() + 13)
@@ -61,7 +62,7 @@ async function load() {
     }
   }
   catch (err) {
-    error.value = apiErrorMessage(err, 'بارگذاری ناموفق بود')
+    error.value = providerId.value ? apiErrorMessage(err, 'بارگذاری ناموفق بود') : 'ارائه‌دهنده مشخص نشده است.'
   }
   finally {
     loading.value = false
@@ -122,59 +123,152 @@ onMounted(load)
 
 function money(q: BookingQuote) {
   if (q.negotiable || q.totalAmount == null) return 'قیمت توافقی'
-  return `${new Intl.NumberFormat('fa-IR').format(q.totalAmount)} تومان`
+  return formatToman(q.totalAmount)
 }
 
 const openDays = computed(() => days.value.filter(d => d.slots.length))
+const selectedDay = computed(() => days.value.find(d => d.date === date.value) || null)
+
+const serviceOptions = computed(() => (provider.value?.services || []).map(s => ({ label: s.title, value: s.id })))
+const petOptions = computed(() => pets.value.map(p => ({ label: p.name, value: p.id })))
+
+function pickSlot(slot: { startTime: string, endTime: string }) {
+  startTime.value = slot.startTime
+  endTime.value = slot.endTime
+}
+
+const canSubmit = computed(() => Boolean(petId.value && quote.value?.available && !quoting.value))
+
+useHead({ title: 'درخواست رزرو | پت‌یار' })
 </script>
 
 <template>
-  <div class="mx-auto max-w-xl px-4 py-12">
-    <NuxtLink v-if="providerId" :to="`/providers/${providerId}`" class="text-sm text-ink-600">بازگشت به پرونده</NuxtLink>
-    <h1 class="mt-3 text-2xl font-semibold">درخواست رزرو</h1>
-    <p class="mt-2 text-sm leading-7 text-ink-600">مبلغ را سرور حساب می‌کند. درگاه پرداخت هنوز نیست.</p>
-    <AppState v-if="loading" title="در حال بارگذاری…" />
-    <form v-else-if="provider" class="mt-8 space-y-5" @submit.prevent="submit">
-      <p class="font-medium">{{ provider.displayName }}</p>
-      <UFormField label="خدمت">
-        <select v-model="serviceId" class="w-full rounded-md border border-ink-200 bg-paper px-3 py-2 text-sm">
-          <option v-for="svc in provider.services" :key="svc.id" :value="svc.id">{{ svc.title }}</option>
-        </select>
-      </UFormField>
-      <p v-if="service" class="text-sm text-ink-600">{{ PRICING_TYPE_LABELS[service.pricingType] }}</p>
-      <UFormField label="حیوان">
-        <select v-model="petId" required class="w-full rounded-md border border-ink-200 bg-paper px-3 py-2 text-sm">
-          <option value="" disabled>انتخاب کنید</option>
-          <option v-for="pet in pets" :key="pet.id" :value="pet.id">{{ pet.name }}</option>
-        </select>
-      </UFormField>
-      <p v-if="!pets.length" class="text-sm text-terracotta-700">
-        ابتدا <NuxtLink to="/pets/new" class="underline">حیوان ثبت کنید</NuxtLink>.
-      </p>
-      <UFormField label="تاریخ (تهران)">
-        <select v-model="date" class="w-full rounded-md border border-ink-200 bg-paper px-3 py-2 text-sm" dir="ltr">
-          <option v-for="day in openDays" :key="day.date" :value="day.date">{{ day.date }}</option>
-        </select>
-      </UFormField>
-      <div class="grid grid-cols-2 gap-3">
-        <UFormField label="شروع">
-          <UInput v-model="startTime" type="time" dir="ltr" class="w-full" />
-        </UFormField>
-        <UFormField label="پایان">
-          <UInput v-model="endTime" type="time" dir="ltr" class="w-full" />
-        </UFormField>
+  <div class="mx-auto max-w-narrow px-4 py-6 sm:px-6 sm:py-10">
+    <PageHeader
+      title="درخواست رزرو"
+      description="مبلغ نهایی روی سرور محاسبه می‌شود و ارائه‌دهنده باید درخواست را بپذیرد."
+      :back="providerId ? { to: `/providers/${providerId}`, label: 'بازگشت به پرونده' } : { to: '/providers', label: 'جستجوی ارائه‌دهنده' }"
+    />
+
+    <SkeletonList v-if="loading" :rows="3" />
+    <AppState v-else-if="!provider" variant="error" :title="error || 'ارائه‌دهنده یافت نشد'">
+      <UButton to="/providers" color="neutral" variant="outline" size="md">جستجوی ارائه‌دهنده</UButton>
+    </AppState>
+
+    <form v-else class="space-y-5" @submit.prevent="submit">
+      <AppSection>
+        <div class="flex items-center gap-3">
+          <MediaThumb :src="provider.photoUrl" :alt="provider.displayName" :initial="initialOf(provider.displayName)" size-class="size-12" rounded="lg" />
+          <div class="min-w-0">
+            <p class="truncate font-bold text-highlighted">{{ provider.displayName }}</p>
+            <p class="truncate text-sm text-muted">{{ [provider.city, provider.district].filter(Boolean).join('، ') }}</p>
+          </div>
+        </div>
+      </AppSection>
+
+      <AppSection title="خدمت و حیوان">
+        <div class="space-y-4">
+          <UFormField label="خدمت" name="service">
+            <USelect v-model="serviceId" :items="serviceOptions" class="w-full" :disabled="!serviceOptions.length" placeholder="انتخاب خدمت" />
+            <template v-if="service" #help>
+              {{ PRICING_TYPE_LABELS[service.pricingType] }}
+              <template v-if="service.price != null && service.pricingType !== 'CUSTOM'"> · {{ formatToman(service.price) }}</template>
+            </template>
+          </UFormField>
+          <UFormField label="حیوان" name="pet" required>
+            <USelect v-model="petId" :items="petOptions" class="w-full" :disabled="!petOptions.length" placeholder="انتخاب کنید" />
+          </UFormField>
+          <UAlert
+            v-if="!pets.length"
+            color="warning"
+            variant="subtle"
+            icon="i-lucide-paw-print"
+            title="هنوز حیوانی ثبت نکرده‌اید"
+            description="برای رزرو باید حداقل یک حیوان در پروفایل‌تان باشد."
+            :actions="[{ label: 'ثبت حیوان', to: '/pets/new', color: 'warning', variant: 'solid', size: 'sm' }]"
+          />
+        </div>
+      </AppSection>
+
+      <AppSection title="زمان" description="به وقت تهران. فقط روزهایی که ارائه‌دهنده آزاد است نمایش داده می‌شوند.">
+        <div v-if="!openDays.length" class="rounded-lg bg-canvas-deep p-4 text-sm leading-7 text-toned">
+          این ارائه‌دهنده در دو هفته آینده زمان آزاد اعلام نکرده است. می‌توانید از طریق پیام هماهنگ کنید.
+        </div>
+        <template v-else>
+          <div class="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 scrollbar-none" role="radiogroup" aria-label="روز">
+            <button
+              v-for="day in openDays"
+              :key="day.date"
+              type="button"
+              role="radio"
+              :aria-checked="date === day.date"
+              class="flex min-h-touch min-w-[4.25rem] shrink-0 flex-col items-center justify-center rounded-xl border px-2 py-2 text-xs font-semibold transition-colors"
+              :class="date === day.date ? 'border-primary bg-forest-50 text-primary' : 'border-default bg-paper text-muted hover:border-ink-300'"
+              @click="date = day.date"
+            >
+              <span>{{ formatCalendarDay(day.date, { weekday: 'short', day: undefined, month: undefined }) }}</span>
+              <span class="num mt-0.5 text-base text-highlighted">{{ formatCalendarDay(day.date, { weekday: undefined, day: 'numeric', month: undefined }) }}</span>
+              <span class="text-[11px] font-normal">{{ formatCalendarDay(day.date, { weekday: undefined, day: undefined, month: 'short' }) }}</span>
+            </button>
+          </div>
+
+          <div v-if="selectedDay?.slots.length" class="mt-4">
+            <p class="text-sm font-medium text-highlighted">بازه‌های آزاد</p>
+            <div class="mt-2 flex flex-wrap gap-2">
+              <button
+                v-for="slot in selectedDay.slots"
+                :key="slot.startTime"
+                type="button"
+                class="num min-h-10 rounded-full border px-3 text-sm font-medium transition-colors"
+                :class="startTime === slot.startTime && endTime === slot.endTime ? 'border-primary bg-forest-50 text-primary' : 'border-default text-toned hover:border-ink-300'"
+                @click="pickSlot(slot)"
+              >
+                {{ slot.startTime }}–{{ slot.endTime }}
+              </button>
+            </div>
+          </div>
+
+          <div class="mt-4 grid grid-cols-2 gap-3">
+            <UFormField label="شروع" name="start">
+              <UInput v-model="startTime" type="time" class="w-full ltr" />
+            </UFormField>
+            <UFormField label="پایان" name="end">
+              <UInput v-model="endTime" type="time" class="w-full ltr" />
+            </UFormField>
+          </div>
+        </template>
+      </AppSection>
+
+      <AppSection title="یادداشت برای ارائه‌دهنده" description="اختیاری؛ مثلاً حساسیت‌ها یا عادت‌های حیوان.">
+        <UTextarea v-model="note" class="w-full" :rows="3" placeholder="…" />
+      </AppSection>
+
+      <!-- Quote summary -->
+      <div class="rounded-xl border border-default bg-canvas-deep p-4" aria-live="polite">
+        <div v-if="quoting" class="flex items-center gap-2 text-sm text-muted">
+          <UIcon name="i-lucide-loader-circle" class="size-4 animate-spin" aria-hidden="true" />
+          در حال برآورد قیمت…
+        </div>
+        <template v-else-if="quote">
+          <div v-if="!quote.available" class="flex items-start gap-2 text-sm text-red-700">
+            <UIcon name="i-lucide-circle-alert" class="mt-1 size-4 shrink-0" aria-hidden="true" />
+            <span>{{ quote.reason || 'این بازه آزاد نیست' }}</span>
+          </div>
+          <dl v-else class="grid grid-cols-2 gap-y-1 text-sm">
+            <dt class="text-muted">مدت</dt>
+            <dd class="text-end font-medium text-highlighted"><span class="num">{{ formatNumber(quote.durationMinutes) }}</span> دقیقه</dd>
+            <dt class="text-muted">مبلغ برآوردی</dt>
+            <dd class="text-end text-lg font-extrabold text-highlighted">{{ money(quote) }}</dd>
+          </dl>
+        </template>
+        <p v-else class="text-sm text-muted">خدمت، حیوان و زمان را انتخاب کنید تا مبلغ برآورد شود.</p>
       </div>
-      <p v-if="quoting" class="text-sm text-ink-500">در حال برآورد…</p>
-      <div v-else-if="quote" class="border border-ink-100 bg-canvas-deep p-4 text-sm leading-7">
-        <p v-if="!quote.available" class="text-terracotta-700">{{ quote.reason || 'این بازه آزاد نیست' }}</p>
-        <p v-else>{{ money(quote) }} · {{ quote.durationMinutes }} دقیقه</p>
-      </div>
-      <UFormField label="یادداشت (اختیاری)">
-        <UTextarea v-model="note" class="w-full" />
-      </UFormField>
-      <p v-if="error" class="text-sm text-terracotta-700">{{ error }}</p>
-      <UButton type="submit" :loading="pending" :disabled="!petId || !quote?.available">ارسال درخواست</UButton>
+
+      <InlineMessage :message="error" />
+
+      <UButton type="submit" block :loading="pending" :disabled="!canSubmit" icon="i-lucide-send">
+        ارسال درخواست رزرو
+      </UButton>
     </form>
-    <p v-else class="mt-6 text-sm text-terracotta-700">{{ error }}</p>
   </div>
 </template>

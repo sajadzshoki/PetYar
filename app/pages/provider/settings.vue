@@ -5,10 +5,12 @@ import { apiErrorMessage } from '~/utils/api-error'
 definePageMeta({ middleware: 'auth', layout: 'provider' })
 
 const { fetch: refreshSession } = useUserSession()
+const toast = useToast()
 const user = ref<PublicUser | null>(null)
+const loading = ref(true)
 const pending = ref(false)
 const error = ref('')
-const ok = ref('')
+const loadError = ref('')
 
 const form = reactive({
   firstName: '',
@@ -18,23 +20,32 @@ const form = reactive({
 })
 
 async function load() {
-  const res = await $fetch<{ data: { user: PublicUser } }>('/api/profile')
-  user.value = res.data.user
-  form.firstName = res.data.user.firstName
-  form.lastName = res.data.user.lastName
-  form.phone = res.data.user.phone || ''
-  form.bio = res.data.user.bio || ''
+  loading.value = true
+  loadError.value = ''
+  try {
+    const res = await $fetch<{ data: { user: PublicUser } }>('/api/profile')
+    user.value = res.data.user
+    form.firstName = res.data.user.firstName
+    form.lastName = res.data.user.lastName
+    form.phone = res.data.user.phone || ''
+    form.bio = res.data.user.bio || ''
+  }
+  catch (err) {
+    loadError.value = apiErrorMessage(err, 'بارگذاری ناموفق بود')
+  }
+  finally {
+    loading.value = false
+  }
 }
 
 async function save() {
   pending.value = true
   error.value = ''
-  ok.value = ''
   try {
     const res = await $fetch<{ data: { user: PublicUser } }>('/api/profile', { method: 'PATCH', body: { ...form } })
     user.value = res.data.user
     await refreshSession()
-    ok.value = 'ذخیره شد'
+    toast.add({ title: 'ذخیره شد', icon: 'i-lucide-check', color: 'success' })
   }
   catch (err) {
     error.value = apiErrorMessage(err, 'ذخیره ناموفق بود')
@@ -45,32 +56,57 @@ async function save() {
 }
 
 onMounted(load)
+
+useHead({ title: 'حساب کاربری | پت‌یار' })
 </script>
 
 <template>
-  <div class="mx-auto max-w-lg px-4 py-10">
-    <h1 class="text-2xl font-semibold">حساب کاربری</h1>
-    <p class="mt-2 text-sm leading-7 text-ink-600">ایمیل هویت ورود است و از اینجا عوض نمی‌شود. پرونده عمومی جداست.</p>
-    <form class="mt-8 space-y-4" @submit.prevent="save">
-      <p v-if="user" class="text-sm text-ink-500" dir="ltr">{{ user.email }}</p>
-      <UFormField label="نام">
-        <UInput v-model="form.firstName" class="w-full" />
-      </UFormField>
-      <UFormField label="نام خانوادگی">
-        <UInput v-model="form.lastName" class="w-full" />
-      </UFormField>
-      <UFormField label="تلفن">
-        <UInput v-model="form.phone" class="w-full" dir="ltr" />
-      </UFormField>
-      <UFormField label="درباره شما">
-        <UTextarea v-model="form.bio" class="w-full" />
-      </UFormField>
-      <p v-if="error" class="text-sm text-terracotta-700">{{ error }}</p>
-      <p v-if="ok" class="text-sm text-forest-700">{{ ok }}</p>
-      <UButton type="submit" :loading="pending">ذخیره</UButton>
+  <div class="mx-auto max-w-narrow px-4 py-6 sm:px-6 sm:py-10">
+    <PageHeader title="حساب کاربری" description="اطلاعات ورود و تماس. برای آنچه مشتری‌ها می‌بینند، پرونده عمومی را ویرایش کنید." />
+
+    <SkeletonList v-if="loading" :rows="2" />
+    <AppState v-else-if="loadError" variant="error" :title="loadError" retry @retry="load" />
+
+    <form v-else class="space-y-5" @submit.prevent="save">
+      <AppSection title="ورود">
+        <dl class="text-sm">
+          <dt class="text-xs text-muted">ایمیل</dt>
+          <dd class="ltr mt-0.5 font-medium text-highlighted">{{ user?.email }}</dd>
+        </dl>
+        <p class="mt-2 text-xs text-muted">ایمیل هویت ورود است و از اینجا عوض نمی‌شود.</p>
+      </AppSection>
+
+      <AppSection title="اطلاعات تماس">
+        <div class="space-y-4">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <UFormField label="نام" name="firstName">
+              <UInput v-model="form.firstName" class="w-full" autocomplete="given-name" />
+            </UFormField>
+            <UFormField label="نام خانوادگی" name="lastName">
+              <UInput v-model="form.lastName" class="w-full" autocomplete="family-name" />
+            </UFormField>
+          </div>
+          <UFormField label="تلفن" name="phone">
+            <UInput v-model="form.phone" class="w-full ltr" type="tel" inputmode="tel" autocomplete="tel" placeholder="09xxxxxxxxx" />
+          </UFormField>
+          <UFormField label="درباره شما" name="bio" help="یادداشت شخصی؛ در پرونده عمومی نمایش داده نمی‌شود.">
+            <UTextarea v-model="form.bio" class="w-full" :rows="3" />
+          </UFormField>
+        </div>
+      </AppSection>
+
+      <InlineMessage :message="error" />
+      <UButton type="submit" block :loading="pending" icon="i-lucide-check">ذخیره</UButton>
     </form>
-    <p class="mt-8 text-sm">
-      <NuxtLink to="/provider/profile" class="text-terracotta-700">ویرایش پرونده عمومی</NuxtLink>
-    </p>
+
+    <ListRow to="/provider/profile" class="surface mt-6">
+      <template #leading>
+        <span class="flex size-10 items-center justify-center rounded-full bg-forest-50 text-primary" aria-hidden="true">
+          <UIcon name="i-lucide-store" class="size-5" />
+        </span>
+      </template>
+      <p class="font-semibold text-highlighted">ویرایش پرونده عمومی</p>
+      <p class="text-sm text-muted">نام نمایشی، معرفی، محل خدمات و گالری</p>
+    </ListRow>
   </div>
 </template>

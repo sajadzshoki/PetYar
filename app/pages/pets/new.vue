@@ -27,12 +27,13 @@ async function submit(payload: Record<string, unknown>) {
 </script>
 
 <template>
-  <div class="mx-auto max-w-lg px-4 py-12">
-    <NuxtLink to="/pets" class="text-sm text-ink-600">بازگشت</NuxtLink>
-    <h1 class="mt-3 text-2xl font-semibold">حیوان جدید</h1>
-    <p class="mt-2 text-sm text-ink-600">پرونده فقط برای حساب شما ساخته می‌شود.</p>
-    <div class="mt-8">
-      <PetForm :pending="pending" :error="error" @submit="submit" />
-    </div>
+  <div class="mx-auto max-w-content px-4 py-6 sm:px-6 sm:py-10">
+    <PageHeader
+      title="حیوان جدید"
+      description="پرونده فقط برای حساب شما ساخته می‌شود و بعداً می‌توانید عکس، واکسن و دارو اضافه کنید."
+      :back="{ to: '/pets', label: 'حیوانات من' }"
+      compact
+    />
+    <PetForm :pending="pending" :error="error" submit-label="ثبت حیوان" @submit="submit" />
   </div>
 </template>

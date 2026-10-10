@@ -25,30 +25,45 @@ async function load() {
 
 onMounted(load)
 
-function when(iso: string | null) {
-  if (!iso) return ''
-  return new Date(iso).toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' })
-}
+useHead({ title: 'پیام‌ها | پت‌یار' })
 </script>
 
 <template>
-  <div class="mx-auto max-w-lg px-4 py-10">
-    <h1 class="text-2xl font-semibold">پیام‌ها</h1>
-    <p class="mt-2 text-sm leading-7 text-ink-600">گفتگو با ارائه‌دهنده یا صاحب حیوان. اتصال لحظه‌ای هنوز نیست؛ صفحه را تازه کنید.</p>
-    <AppState v-if="loading" title="در حال بارگذاری…" />
-    <AppState v-else-if="error" :title="error" />
-    <p v-else-if="!items.length" class="mt-10 text-sm text-ink-500">هنوز گفتگویی ندارید.</p>
-    <ul v-else class="mt-8 divide-y divide-ink-100">
+  <div class="mx-auto max-w-content px-4 py-6 sm:px-6 sm:py-10">
+    <PageHeader title="پیام‌ها" description="گفتگو با ارائه‌دهنده‌ها و صاحبان حیوان. اطلاعات مهم رزرو را همین‌جا هماهنگ کنید." />
+
+    <SkeletonList v-if="loading" :rows="4" avatar />
+    <AppState v-else-if="error" variant="error" :title="error" retry @retry="load" />
+    <AppState
+      v-else-if="!items.length"
+      icon="i-lucide-message-circle"
+      title="هنوز گفتگویی ندارید"
+      description="از صفحه هر ارائه‌دهنده می‌توانید گفتگو را شروع کنید."
+    >
+      <UButton to="/providers" icon="i-lucide-search" variant="soft">جستجوی ارائه‌دهنده</UButton>
+    </AppState>
+
+    <ul v-else class="surface divide-y divide-muted">
       <li v-for="item in items" :key="item.id">
-        <NuxtLink :to="`/inbox/${item.id}`" class="flex items-start justify-between gap-3 py-4">
-          <div class="min-w-0">
-            <p class="font-medium">{{ item.title }}</p>
-            <p class="mt-1 truncate text-sm text-ink-600">{{ item.lastMessagePreview || 'بدون پیام' }}</p>
-            <p class="mt-1 text-xs text-ink-400">{{ when(item.lastMessageAt) }}</p>
+        <NuxtLink :to="`/inbox/${item.id}`" class="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-canvas">
+          <MediaThumb :initial="initialOf(item.title)" :alt="item.title" size-class="size-12" rounded="full" />
+          <div class="min-w-0 flex-1">
+            <div class="flex items-baseline justify-between gap-2">
+              <p class="truncate text-base font-bold text-highlighted" :class="!item.unreadCount && 'font-semibold'">{{ item.title }}</p>
+              <time v-if="item.lastMessageAt" class="shrink-0 text-xs text-dimmed" :datetime="item.lastMessageAt">{{ formatRelative(item.lastMessageAt) }}</time>
+            </div>
+            <p class="mt-0.5 truncate text-sm" :class="item.unreadCount ? 'font-medium text-default' : 'text-muted'">
+              {{ item.lastMessagePreview || 'بدون پیام' }}
+            </p>
           </div>
-          <span v-if="item.unreadCount" class="mt-1 shrink-0 rounded-full bg-terracotta-500 px-2 py-0.5 text-xs text-white">
-            {{ item.unreadCount }}
+          <span
+            v-if="item.unreadCount"
+            class="num flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-white"
+            :aria-label="`${formatNumber(item.unreadCount)} پیام خوانده‌نشده`"
+          >
+            {{ formatNumber(item.unreadCount) }}
           </span>
+          <UIcon v-else name="i-lucide-chevron-left" class="size-4 shrink-0 text-ink-300" aria-hidden="true" />
         </NuxtLink>
       </li>
     </ul>

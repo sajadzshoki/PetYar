@@ -44,6 +44,19 @@ Optional Docker for Postgres:
 docker compose up -d postgres
 ```
 
+Notes:
+
+- The Compose database user and database are both `petyar` (`docker exec petyar-postgres psql -U petyar petyar`).
+- `npm run db:seed` is idempotent and does nothing once any user exists. It currently fails under Node 22 ESM with `nuxt-auth-utils does not provide an export named 'hashPassword'`; register through the UI (`/register`) and promote an admin with `UPDATE users SET role = 'ADMIN' WHERE email = '...'` until that is fixed.
+
+## Fonts
+
+The UI uses Vazirmatn, served from this repository — no CDN or Google Fonts request is made.
+
+- File: `public/fonts/Vazirmatn-Variable.woff2` (variable, weights 100–900), license in `public/fonts/Vazirmatn-OFL.txt` (SIL Open Font License 1.1).
+- Declared with one `@font-face` in `app/assets/css/main.css`, preloaded via `nuxt.config.ts` `app.head.link`, and `@nuxt/fonts` is set to `provider: 'none'` for the family.
+- To upgrade, replace the WOFF2 file; no code changes are needed. See `docs/ui-system.md` for typography and number-formatting rules.
+
 ## Environment variables
 
 See `.env.example`.

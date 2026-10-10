@@ -3,19 +3,23 @@ import { apiErrorMessage } from '~/utils/api-error'
 
 definePageMeta({ middleware: ['auth', 'role'], roles: ['ADMIN'], layout: 'admin' })
 
-const overview = ref<{
+interface Overview {
   users: number
   providers: number
   openReports: number
   openDisputes: number
   pendingVerifications: number
-} | null>(null)
+}
+
+const overview = ref<Overview | null>(null)
 const error = ref('')
 const loading = ref(true)
 
-onMounted(async () => {
+async function load() {
+  loading.value = true
+  error.value = ''
   try {
-    const res = await $fetch<{ data: { overview: NonNullable<typeof overview.value> } }>('/api/admin/overview')
+    const res = await $fetch<{ data: { overview: Overview } }>('/api/admin/overview')
     overview.value = res.data.overview
   }
   catch (err) {
@@ -24,34 +28,66 @@ onMounted(async () => {
   finally {
     loading.value = false
   }
+}
+
+onMounted(load)
+
+const queue = computed(() => {
+  const o = overview.value
+  if (!o) return []
+  return [
+    { label: 'احراز هویت در صف', value: o.pendingVerifications, to: '/admin/verifications', icon: 'i-lucide-badge-check', urgent: o.pendingVerifications > 0 },
+    { label: 'گزارش باز', value: o.openReports, to: '/admin/reports', icon: 'i-lucide-flag', urgent: o.openReports > 0 },
+    { label: 'اختلاف باز', value: o.openDisputes, to: '/admin/disputes', icon: 'i-lucide-scale', urgent: o.openDisputes > 0 },
+  ]
 })
+
+useHead({ title: 'مدیریت | پت‌یار' })
 </script>
 
 <template>
-  <div class="mx-auto max-w-3xl px-4 py-10">
-    <h1 class="text-2xl font-semibold">مدیریت پت‌یار</h1>
-    <p class="mt-2 text-sm leading-7 text-ink-600">اعداد زنده از پایگاه‌داده. نشان ساختگی نیست.</p>
-    <AppState v-if="loading" title="در حال بارگذاری…" />
-    <p v-else-if="error" class="mt-4 text-sm text-terracotta-700">{{ error }}</p>
-    <ul v-else-if="overview" class="mt-8 divide-y divide-ink-100 text-sm">
-      <li class="flex justify-between py-3">
-        <span>کاربران</span><span>{{ overview.users }}</span>
-      </li>
-      <li class="flex justify-between py-3">
-        <span>پرونده ارائه‌دهنده</span><span>{{ overview.providers }}</span>
-      </li>
-      <li class="flex justify-between py-3">
-        <NuxtLink to="/admin/verifications">احراز در صف</NuxtLink>
-        <span>{{ overview.pendingVerifications }}</span>
-      </li>
-      <li class="flex justify-between py-3">
-        <NuxtLink to="/admin/reports">گزارش باز</NuxtLink>
-        <span>{{ overview.openReports }}</span>
-      </li>
-      <li class="flex justify-between py-3">
-        <NuxtLink to="/admin/disputes">اختلاف باز</NuxtLink>
-        <span>{{ overview.openDisputes }}</span>
-      </li>
-    </ul>
+  <div class="max-w-content">
+    <PageHeader title="مدیریت پت‌یار" description="اعداد زنده از پایگاه‌داده. کارهای باز را از همین‌جا دنبال کنید." />
+
+    <SkeletonList v-if="loading" :rows="3" />
+    <AppState v-else-if="error" variant="error" :title="error" retry @retry="load" />
+
+    <template v-else-if="overview">
+      <h2 class="mb-2 text-sm font-semibold text-muted">صف کارها</h2>
+      <ul class="grid gap-3 sm:grid-cols-3">
+        <li v-for="item in queue" :key="item.to">
+          <NuxtLink
+            :to="item.to"
+            class="pressable surface flex items-center gap-3 p-4 transition-colors hover:border-forest-300"
+            :class="item.urgent && 'ring-terracotta-300 bg-terracotta-50/40'"
+          >
+            <span class="flex size-11 shrink-0 items-center justify-center rounded-full" :class="item.urgent ? 'bg-terracotta-100 text-terracotta-700' : 'bg-canvas-deep text-muted'" aria-hidden="true">
+              <UIcon :name="item.icon" class="size-5" />
+            </span>
+            <span class="min-w-0 flex-1">
+              <span class="block text-2xl font-extrabold text-highlighted"><span class="num">{{ formatNumber(item.value) }}</span></span>
+              <span class="block text-sm text-muted">{{ item.label }}</span>
+            </span>
+            <UIcon name="i-lucide-chevron-left" class="size-4 text-ink-300" aria-hidden="true" />
+          </NuxtLink>
+        </li>
+      </ul>
+
+      <h2 class="mt-8 mb-2 text-sm font-semibold text-muted">کل سامانه</h2>
+      <ul class="grid grid-cols-2 gap-3">
+        <li>
+          <NuxtLink to="/admin/users" class="pressable surface block p-4 transition-colors hover:border-forest-300">
+            <span class="flex items-center gap-2 text-sm text-muted"><UIcon name="i-lucide-users" class="size-4" aria-hidden="true" />کاربران</span>
+            <span class="mt-1 block text-2xl font-extrabold text-highlighted"><span class="num">{{ formatNumber(overview.users) }}</span></span>
+          </NuxtLink>
+        </li>
+        <li>
+          <NuxtLink to="/admin/providers" class="pressable surface block p-4 transition-colors hover:border-forest-300">
+            <span class="flex items-center gap-2 text-sm text-muted"><UIcon name="i-lucide-store" class="size-4" aria-hidden="true" />پرونده ارائه‌دهنده</span>
+            <span class="mt-1 block text-2xl font-extrabold text-highlighted"><span class="num">{{ formatNumber(overview.providers) }}</span></span>
+          </NuxtLink>
+        </li>
+      </ul>
+    </template>
   </div>
 </template>
