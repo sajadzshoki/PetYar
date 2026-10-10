@@ -14,7 +14,7 @@ export default defineEventHandler(async () => {
     status: 'ok' as const,
     data: {
       service: 'petyar',
-      phase: '01',
+      phase: '12',
       database,
     },
   }

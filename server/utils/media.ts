@@ -8,15 +8,24 @@ const EXT: Record<string, string> = {
   'image/webp': 'webp',
 }
 
-export function assertImageUpload(file: { type?: string, data: Buffer, filename?: string }) {
-  const type = file.type || ''
-  if (!(IMAGE_MIME_TYPES as readonly string[]).includes(type)) {
-    throw validationError({ field: 'file' }, 'فقط تصویر JPEG، PNG یا WebP پذیرفته می‌شود')
+function sniffImageType(data: Buffer): string | null {
+  if (data.length >= 3 && data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff) return 'image/jpeg'
+  if (data.length >= 8 && data[0] === 0x89 && data[1] === 0x50 && data[2] === 0x4e && data[3] === 0x47) return 'image/png'
+  if (data.length >= 12 && data.subarray(0, 4).toString('ascii') === 'RIFF' && data.subarray(8, 12).toString('ascii') === 'WEBP') {
+    return 'image/webp'
   }
+  return null
+}
+
+export function assertImageUpload(file: { type?: string, data: Buffer, filename?: string }) {
   if (file.data.length === 0 || file.data.length > MAX_IMAGE_BYTES) {
     throw validationError({ field: 'file' }, 'حجم تصویر باید کمتر از ۲ مگابایت باشد')
   }
-  return type
+  const sniffed = sniffImageType(file.data)
+  if (!sniffed || !(IMAGE_MIME_TYPES as readonly string[]).includes(sniffed)) {
+    throw validationError({ field: 'file' }, 'فقط تصویر JPEG، PNG یا WebP پذیرفته می‌شود')
+  }
+  return sniffed
 }
 
 export function mediaKey(prefix: string, contentType: string) {

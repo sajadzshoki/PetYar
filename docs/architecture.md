@@ -1,26 +1,37 @@
-# Phase 01 architecture notes
+# Architecture
+
+PetYar is a **modular monolith** (Nuxt 4 + Nitro + Vue + PostgreSQL). It is not a set of microservices.
+
+```
+app/        Pages, layouts, middleware, design tokens
+server/     Nitro API handlers, services, db, storage, payments
+shared/     Types, Zod schemas, constants, money/pricing helpers
+```
 
 ## Request path
 
-1. Browser hits a Vue page (`app/pages`).
-2. Protected pages use `middleware/auth.ts` (client + SSR session).
-3. Mutations go to Nitro handlers in `server/api`.
-4. Handlers parse the body with Zod, call a service, map errors through `handleApi`.
-5. Services talk to PostgreSQL via Drizzle (`getDb()`).
+1. Browser renders a Vue page (`app/pages`).
+2. Protected pages use `middleware/auth.ts` or `role` (session cookie).
+3. Mutations call Nitro routes under `server/api`.
+4. Handlers parse input with Zod (`shared/validation`), call a service, map errors with `handleApi`.
+5. Services own domain rules and talk to PostgreSQL via Drizzle (`getDb()`).
 
-## Auth
+## Rules
 
-Sealed, httpOnly session cookie. Session payload is `{ user: SessionUser }`. Password hashes never leave the database.
+- Business logic does not live in Vue. Pages call APIs.
+- Pages never import `server/db`.
+- Object storage is an interface (`server/storage`) with `local` and `minio` drivers.
+- Sessions are sealed httpOnly cookies (`nuxt-auth-utils`), not JWT.
 
-Authorization:
+## Module boundaries
 
-- UI: middleware + `useUserSession()`.
-- API: `requireAuth` / `requireRole` — never trust client-only checks.
-
-## Storage
-
-`getObjectStorage()` returns a local filesystem adapter. Switching `STORAGE_DRIVER=minio` is the intended production path; the MinIO adapter is intentionally not activated in phase 01.
+| Layer | May import | Must not |
+| --- | --- | --- |
+| `app/` | `shared/`, APIs | SQL, hashing, storage adapters |
+| `server/api` | services, utils, validation | Vue |
+| `server/services` | db, storage, shared | Vue |
+| `shared/` | nothing from app/server | Nitro, Vue, `fs` |
 
 ## Observability
 
-JSON logs via `server/utils/logger.ts`. Health: `GET /api/health` reports process + database ping.
+JSON logs (`server/utils/logger.ts`). Health: `GET /api/health` (process + database ping). Current product phase is reported as `12`.

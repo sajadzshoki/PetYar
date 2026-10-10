@@ -1,4 +1,4 @@
-import { pgEnum, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core'
+import { pgEnum, pgTable, text, timestamp, unique, uuid, varchar } from 'drizzle-orm/pg-core'
 import { users } from './users'
 import { bookings } from './bookings'
 import { providers } from './providers'
@@ -22,7 +22,7 @@ export const conversationParticipants = pgTable('conversation_participants', {
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   lastReadAt: timestamp('last_read_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-})
+}, table => [unique('conversation_participants_unique').on(table.conversationId, table.userId)])
 
 export const messages = pgTable('messages', {
   id: uuid('id').defaultRandom().primaryKey(),

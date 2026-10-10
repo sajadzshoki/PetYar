@@ -50,7 +50,7 @@ function toService(row: ProviderServiceRow, categoryName: string): ProviderServi
   }
 }
 
-function toProfile(row: ProviderRow, gallery: GalleryRow[]): ProviderProfile {
+function toProfile(row: ProviderRow, gallery: GalleryRow[], publicView = false): ProviderProfile {
   return {
     id: row.id,
     userId: row.userId,
@@ -67,7 +67,7 @@ function toProfile(row: ProviderRow, gallery: GalleryRow[]): ProviderProfile {
     longitude: num(row.longitude),
     serviceRadiusKm: num(row.serviceRadiusKm),
     isActive: row.isActive,
-    verificationStatus: row.verificationStatus,
+    verificationStatus: publicView && row.verificationStatus !== 'APPROVED' ? 'UNVERIFIED' : row.verificationStatus,
     verified: row.verificationStatus === 'APPROVED',
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -226,7 +226,7 @@ export const providerService = {
     const result: ProviderProfile[] = []
     for (const row of rows) {
       const gallery = await loadGallery(row.id)
-      result.push(toProfile(row, gallery))
+      result.push(toProfile(row, gallery, true))
     }
     return result
   },
@@ -243,7 +243,7 @@ export const providerService = {
       viewerId ? reviewService.isFavorite(viewerId, row.id) : Promise.resolve(false),
     ])
     return {
-      ...toProfile(row, gallery),
+      ...toProfile(row, gallery, true),
       services: services.map(s => toService(s, names.get(s.categoryId) || '')),
       rating,
       favorited,

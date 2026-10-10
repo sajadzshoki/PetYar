@@ -1,3 +1,11 @@
+<script setup lang="ts">
+const q = ref('')
+
+function search() {
+  navigateTo({ path: '/providers', query: q.value.trim() ? { q: q.value.trim() } : undefined })
+}
+</script>
+
 <template>
   <div>
     <section class="relative overflow-hidden">
@@ -10,16 +18,15 @@
           </h1>
           <p class="mt-5 max-w-md text-base leading-8 text-ink-600">
             پت‌یار جاییست که صاحب حیوان خانگی، ارائه‌دهندهٔ خدمات و اعتماد به هم می‌رسند.
-            واکسیناسیون، نگهداری، آرایش و مراقبت — با آدم‌هایی که می‌شناسید.
+            جستجو، رزرو، گفتگو و پرداخت روی همین سامانه انجام می‌شود.
           </p>
-          <form class="mt-8 flex max-w-md gap-2" action="/providers" method="get">
-            <UInput name="q" class="flex-1" placeholder="جستجوی خدمت یا محله" />
+          <form class="mt-8 flex max-w-md gap-2" @submit.prevent="search">
+            <UInput v-model="q" class="flex-1" placeholder="جستجوی خدمت یا محله" />
             <UButton type="submit" size="lg">جستجو</UButton>
           </form>
           <div class="mt-4 flex flex-wrap gap-3">
             <UButton to="/providers" size="lg" color="neutral" variant="outline">همه ارائه‌دهندگان</UButton>
           </div>
-          <p class="mt-6 text-xs text-ink-500">در حال ساخت زیربنا. رزرو و پرداخت در فازهای بعد فعال می‌شود.</p>
         </div>
         <div class="relative">
           <img
@@ -40,17 +47,17 @@
           <li>
             <p class="text-sm text-terracotta-600">۰۱</p>
             <h3 class="mt-2 font-medium">حساب بسازید</h3>
-            <p class="mt-2 text-sm leading-7 text-ink-600">به‌عنوان صاحب حیوان یا ارائه‌دهنده خدمات ثبت‌نام کنید.</p>
+            <p class="mt-2 text-sm leading-7 text-ink-600">به‌عنوان صاحب حیوان ثبت‌نام کنید یا پرونده ارائه‌دهنده بسازید.</p>
           </li>
           <li>
             <p class="text-sm text-terracotta-600">۰۲</p>
-            <h3 class="mt-2 font-medium">نیازتان را مشخص کنید</h3>
-            <p class="mt-2 text-sm leading-7 text-ink-600">نگهداری، بهداشت، آموزش یا مراقبت در منزل — به‌زودی.</p>
+            <h3 class="mt-2 font-medium">خدمت را پیدا کنید</h3>
+            <p class="mt-2 text-sm leading-7 text-ink-600">جستجو کنید، تقویم را ببینید، رزرو بفرستید و در صورت نیاز گفتگو کنید.</p>
           </li>
           <li>
             <p class="text-sm text-terracotta-600">۰۳</p>
             <h3 class="mt-2 font-medium">با اطمینان بسپارید</h3>
-            <p class="mt-2 text-sm leading-7 text-ink-600">تأیید هویت، نظرات و پرداخت امن در فازهای بعدی می‌آید.</p>
+            <p class="mt-2 text-sm leading-7 text-ink-600">پرداخت فقط پس از تأیید درگاه، نظر پس از اتمام خدمت، احراز فقط پس از بررسی مدارک.</p>
           </li>
         </ol>
       </div>
@@ -68,9 +75,8 @@
         <div>
           <h2 class="text-2xl font-semibold">اعتماد، اصل ماجراست</h2>
           <p class="mt-4 text-sm leading-7 text-ink-600">
-            طراحی پت‌یار برای خانواده‌های ایرانی است: واضح، گرم و بدون هیاهو.
-            نقش‌ها از همین فاز مشخص‌اند — صاحب حیوان، ارائه‌دهنده، مدیر —
-            تا هر قابلیت بعدی روی همین ستون بایستد.
+            پت‌یار برای خانواده‌های ایرانی است: واضح، گرم و بدون هیاهو.
+            نقش‌ها مشخص‌اند — صاحب حیوان، ارائه‌دهنده، مدیر — و نشان تأیید فقط وقتی نمایش داده می‌شود که مدارک واقعاً تصویب شده باشد.
           </p>
         </div>
       </div>

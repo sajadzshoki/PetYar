@@ -10,5 +10,6 @@ export const HTTP_STATUS = {
   NOT_FOUND: 404,
   CONFLICT: 409,
   UNPROCESSABLE: 422,
+  TOO_MANY: 429,
   INTERNAL: 500,
 } as const

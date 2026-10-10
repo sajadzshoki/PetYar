@@ -33,3 +33,7 @@ export function conflict(message: string) {
 export function validationError(details: unknown, message = 'داده‌های ارسالی نامعتبر است') {
   return new AppError('VALIDATION_ERROR', message, HTTP_STATUS.UNPROCESSABLE, details)
 }
+
+export function tooManyRequests(message = 'تعداد درخواست‌ها زیاد است. کمی بعد دوباره تلاش کنید') {
+  return new AppError('RATE_LIMITED', message, HTTP_STATUS.TOO_MANY)
+}

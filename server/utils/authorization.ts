@@ -14,7 +14,13 @@ export async function getSessionUser(event: AuthEvent): Promise<SessionUser | nu
 export async function requireAuth(event: AuthEvent): Promise<SessionUser> {
   const user = await getSessionUser(event)
   if (!user) throw unauthorized()
-  return user
+  const { authService } = await import('../services/auth.service')
+  const row = await authService.getRowById(user.id)
+  if (!row || row.status !== 'ACTIVE') {
+    await clearUserSession(event as never).catch(() => undefined)
+    throw unauthorized()
+  }
+  return { id: row.id, email: row.email, displayName: row.displayName, role: row.role }
 }
 
 export async function requireRole(event: AuthEvent, roles: UserRole[]): Promise<SessionUser> {

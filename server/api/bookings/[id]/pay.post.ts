@@ -3,8 +3,10 @@ import { requireAuth } from '../../../utils/authorization'
 import { parseBody } from '../../../utils/validate'
 import { uuidParamSchema } from '../../../../shared/validation/pet'
 import { paymentService } from '../../../services/payment.service'
+import { clientKey, rateLimit } from '../../../utils/rate-limit'
 
 export default defineEventHandler(event => handleApi(async () => {
+  rateLimit(clientKey(event, 'pay'), 10, 60_000)
   const session = await requireAuth(event as never)
   const id = parseBody(uuidParamSchema, getRouterParam(event, 'id'))
   const payment = await paymentService.initiateForOwner(session.id, id)
