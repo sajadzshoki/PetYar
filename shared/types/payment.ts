@@ -44,3 +44,15 @@ export interface PaymentTransaction {
 export interface PaymentWithTransactions extends Payment {
   transactions: PaymentTransaction[]
 }
+
+/** Sums of stored payment rows for a provider. Not projected analytics. */
+export interface ProviderEarnings {
+  currency: string
+  grossPaid: number
+  platformFees: number
+  providerEarnings: number
+  refunded: number
+  unpaid: number
+  paidCount: number
+  unpaidCount: number
+}

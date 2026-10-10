@@ -1,209 +1,100 @@
 <script setup lang="ts">
 import type { ProviderProfile } from '~~/shared/types/provider'
+import type { Booking } from '~~/shared/types/booking'
+import type { ProviderEarnings } from '~~/shared/types/payment'
+import { BOOKING_STATUS_LABELS } from '~~/shared/constants/bookings'
 import { apiErrorMessage } from '~/utils/api-error'
 
-definePageMeta({ middleware: 'auth' })
+definePageMeta({ middleware: 'auth', layout: 'provider' })
 
-const { fetch: refreshSession } = useUserSession()
 const provider = ref<ProviderProfile | null>(null)
+const bookings = ref<Booking[]>([])
+const earnings = ref<ProviderEarnings | null>(null)
 const loading = ref(true)
-const pending = ref(false)
 const error = ref('')
-const ok = ref('')
-const photoInput = ref<HTMLInputElement | null>(null)
-const galleryInput = ref<HTMLInputElement | null>(null)
-
-const form = reactive({
-  displayName: '',
-  bio: '',
-  experienceYears: '',
-  experience: '',
-  serviceArea: '',
-  city: '',
-  district: '',
-  latitude: '',
-  longitude: '',
-  serviceRadiusKm: '',
-  isActive: true,
-})
-
-function fill(p: ProviderProfile) {
-  provider.value = p
-  form.displayName = p.displayName
-  form.bio = p.bio || ''
-  form.experienceYears = p.experienceYears != null ? String(p.experienceYears) : ''
-  form.experience = p.experience || ''
-  form.serviceArea = p.serviceArea || ''
-  form.city = p.city || ''
-  form.district = p.district || ''
-  form.latitude = p.latitude != null ? String(p.latitude) : ''
-  form.longitude = p.longitude != null ? String(p.longitude) : ''
-  form.serviceRadiusKm = p.serviceRadiusKm != null ? String(p.serviceRadiusKm) : ''
-  form.isActive = p.isActive
-}
-
-function payload() {
-  return {
-    ...form,
-    experienceYears: form.experienceYears === '' ? null : Number(form.experienceYears),
-    latitude: form.latitude === '' ? null : Number(form.latitude),
-    longitude: form.longitude === '' ? null : Number(form.longitude),
-    serviceRadiusKm: form.serviceRadiusKm === '' ? null : Number(form.serviceRadiusKm),
-  }
-}
 
 async function load() {
   loading.value = true
+  error.value = ''
   try {
-    const res = await $fetch<{ data: { provider: ProviderProfile | null } }>('/api/provider')
-    if (res.data.provider) fill(res.data.provider)
+    const p = await $fetch<{ data: { provider: ProviderProfile | null } }>('/api/provider')
+    provider.value = p.data.provider
+    if (!p.data.provider) return
+    const [b, e] = await Promise.all([
+      $fetch<{ data: { bookings: Booking[] } }>('/api/provider/bookings'),
+      $fetch<{ data: { earnings: ProviderEarnings } }>('/api/provider/earnings').catch(() => null),
+    ])
+    bookings.value = b.data.bookings
+    earnings.value = e?.data.earnings ?? null
   }
   catch (err) {
-    error.value = apiErrorMessage(err, 'بارگذاری ناموفق بود')
+    error.value = apiErrorMessage(err, 'بارگذاری کارتابل ناموفق بود')
   }
   finally {
     loading.value = false
   }
 }
 
-async function save() {
-  pending.value = true
-  error.value = ''
-  ok.value = ''
-  try {
-    if (provider.value) {
-      const res = await $fetch<{ data: { provider: ProviderProfile } }>('/api/provider', { method: 'PATCH', body: payload() })
-      fill(res.data.provider)
-      ok.value = 'پرونده ذخیره شد'
-    }
-    else {
-      const res = await $fetch<{ data: { provider: ProviderProfile } }>('/api/provider', { method: 'POST', body: payload() })
-      fill(res.data.provider)
-      await refreshSession()
-      ok.value = 'پرونده ساخته شد'
-    }
-  }
-  catch (err) {
-    error.value = apiErrorMessage(err, 'ذخیره ناموفق بود')
-  }
-  finally {
-    pending.value = false
-  }
-}
-
-async function upload(url: string, file: File) {
-  const body = new FormData()
-  body.append('file', file)
-  const res = await $fetch<{ data: { provider: ProviderProfile } }>(url, { method: 'POST', body })
-  fill(res.data.provider)
-}
-
-async function onPhoto(e: Event) {
-  const file = (e.target as HTMLInputElement).files?.[0]
-  if (!file) return
-  try {
-    await upload('/api/provider/photo', file)
-    ok.value = 'تصویر به‌روز شد'
-  }
-  catch (err) {
-    error.value = apiErrorMessage(err, 'آپلود ناموفق بود')
-  }
-  ;(e.target as HTMLInputElement).value = ''
-}
-
-async function onGallery(e: Event) {
-  const file = (e.target as HTMLInputElement).files?.[0]
-  if (!file) return
-  try {
-    await upload('/api/provider/gallery', file)
-  }
-  catch (err) {
-    error.value = apiErrorMessage(err, 'آپلود گالری ناموفق بود')
-  }
-  ;(e.target as HTMLInputElement).value = ''
-}
-
-async function removeGallery(id: string) {
-  const res = await $fetch<{ data: { provider: ProviderProfile } }>(`/api/provider/gallery/${id}`, { method: 'DELETE' })
-  fill(res.data.provider)
-}
-
 onMounted(load)
+
+const pending = computed(() => bookings.value.filter(b => b.status === 'PENDING'))
+const upcoming = computed(() => bookings.value.filter(b => b.status === 'CONFIRMED' || b.status === 'ACCEPTED').slice(0, 5))
+
+function toman(n: number) {
+  return `${new Intl.NumberFormat('fa-IR').format(n)} تومان`
+}
+
+function when(iso: string) {
+  return new Date(iso).toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' })
+}
 </script>
 
 <template>
-  <div class="mx-auto max-w-lg px-4 py-12">
-    <p class="text-sm text-forest-700">ارائه‌دهنده</p>
-    <h1 class="mt-1 text-2xl font-semibold">پرونده خدمات</h1>
-    <p class="mt-2 text-sm leading-7 text-ink-600">
-      این صفحه عمومی می‌شود. رزرو هنوز فعال نیست.
-    </p>
+  <div class="mx-auto max-w-2xl px-4 py-10">
+    <h1 class="text-2xl font-semibold">کارتابل ارائه‌دهنده</h1>
+    <p class="mt-2 text-sm leading-7 text-ink-600">کارهای باز، نه نمودار تزئینی. اعداد درآمد از پرداخت‌های ثبت‌شده می‌آید.</p>
     <AppState v-if="loading" title="در حال بارگذاری…" />
-    <form v-else class="mt-8 space-y-4" @submit.prevent="save">
-      <div v-if="provider" class="flex items-center gap-4">
-        <button type="button" class="h-20 w-20 overflow-hidden border border-ink-200 bg-canvas-deep" @click="photoInput?.click()">
-          <img v-if="provider.photoUrl" :src="provider.photoUrl" alt="" class="h-full w-full object-cover">
-        </button>
-        <button type="button" class="text-sm text-terracotta-700" @click="photoInput?.click()">تغییر تصویر</button>
-        <input ref="photoInput" type="file" accept="image/jpeg,image/png,image/webp" class="hidden" @change="onPhoto">
-      </div>
-      <UFormField label="نام نمایشی">
-        <UInput v-model="form.displayName" class="w-full" />
-      </UFormField>
-      <UFormField label="معرفی">
-        <UTextarea v-model="form.bio" class="w-full" :rows="4" />
-      </UFormField>
-      <UFormField label="سابقه (سال)">
-        <UInput v-model="form.experienceYears" type="number" min="0" class="w-full" dir="ltr" />
-      </UFormField>
-      <UFormField label="شرح تجربه">
-        <UTextarea v-model="form.experience" class="w-full" :rows="3" />
-      </UFormField>
-      <UFormField label="شهر">
-        <UInput v-model="form.city" class="w-full" />
-      </UFormField>
-      <UFormField label="محله">
-        <UInput v-model="form.district" class="w-full" />
-      </UFormField>
-      <UFormField label="محدوده خدمات">
-        <UInput v-model="form.serviceArea" class="w-full" />
-      </UFormField>
-      <div class="grid gap-3 sm:grid-cols-2">
-        <UFormField label="عرض جغرافیایی">
-          <UInput v-model="form.latitude" class="w-full" dir="ltr" />
-        </UFormField>
-        <UFormField label="طول جغرافیایی">
-          <UInput v-model="form.longitude" class="w-full" dir="ltr" />
-        </UFormField>
-      </div>
-      <UFormField label="شعاع (کیلومتر)">
-        <UInput v-model="form.serviceRadiusKm" class="w-full" dir="ltr" />
-      </UFormField>
-      <UCheckbox v-model="form.isActive" label="پرونده فعال و قابل نمایش عمومی" />
-      <p v-if="error" class="text-sm text-terracotta-700">{{ error }}</p>
-      <p v-if="ok" class="text-sm text-forest-700">{{ ok }}</p>
-      <UButton type="submit" :loading="pending">{{ provider ? 'ذخیره' : 'ساخت پرونده' }}</UButton>
-    </form>
-
-    <section v-if="provider" class="mt-12 border-t border-ink-200 pt-8">
-      <h2 class="text-lg font-medium">گالری</h2>
-      <div class="mt-4 grid grid-cols-3 gap-2">
-        <div v-for="img in provider.gallery" :key="img.id" class="relative">
-          <img :src="img.imageUrl" alt="" class="h-24 w-full object-cover ring-1 ring-ink-200">
-          <button type="button" class="mt-1 text-xs text-ink-500" @click="removeGallery(img.id)">حذف</button>
+    <p v-else-if="error" class="mt-4 text-sm text-terracotta-700">{{ error }}</p>
+    <div v-else-if="!provider" class="mt-8">
+      <p class="text-sm leading-7 text-ink-600">هنوز پرونده ارائه‌دهنده ندارید.</p>
+      <UButton class="mt-4" to="/provider/profile">ساخت پرونده</UButton>
+    </div>
+    <template v-else>
+      <section class="mt-8">
+        <div class="flex items-baseline justify-between">
+          <h2 class="text-lg font-medium">در انتظار پاسخ</h2>
+          <NuxtLink to="/provider/bookings" class="text-sm text-ink-500">همه رزروها</NuxtLink>
         </div>
-      </div>
-      <input ref="galleryInput" type="file" accept="image/jpeg,image/png,image/webp" class="hidden" @change="onGallery">
-      <UButton class="mt-4" size="sm" color="neutral" variant="outline" @click="galleryInput?.click()">افزودن تصویر</UButton>
-      <p class="mt-8">
-        <NuxtLink to="/provider/services" class="text-sm text-terracotta-700">مدیریت خدمات</NuxtLink>
-        <span class="mx-2 text-ink-300">·</span>
-        <NuxtLink to="/provider/availability" class="text-sm text-terracotta-700">تقویم و ساعت کاری</NuxtLink>
-        <span class="mx-2 text-ink-300">·</span>
-        <NuxtLink to="/provider/bookings" class="text-sm text-terracotta-700">درخواست‌های رزرو</NuxtLink>
-        <span class="mx-2 text-ink-300">·</span>
-        <NuxtLink :to="`/providers/${provider.id}`" class="text-sm text-ink-600">نمایش عمومی</NuxtLink>
-      </p>
-    </section>
+        <p v-if="!pending.length" class="mt-3 text-sm text-ink-500">درخواست بازی نیست.</p>
+        <ul v-else class="mt-3 divide-y divide-ink-100">
+          <li v-for="item in pending" :key="item.id" class="py-3">
+            <NuxtLink :to="`/provider/bookings/${item.id}`" class="block">
+              <p class="font-medium">{{ item.serviceTitle }} · {{ item.petName }}</p>
+              <p class="mt-1 text-sm text-ink-600">{{ when(item.startAt) }}</p>
+            </NuxtLink>
+          </li>
+        </ul>
+      </section>
+
+      <section class="mt-10">
+        <h2 class="text-lg font-medium">رزروهای پیش‌رو</h2>
+        <p v-if="!upcoming.length" class="mt-3 text-sm text-ink-500">مورد تأییدشده‌ای در صف نیست.</p>
+        <ul v-else class="mt-3 divide-y divide-ink-100">
+          <li v-for="item in upcoming" :key="item.id" class="flex justify-between gap-3 py-3 text-sm">
+            <NuxtLink :to="`/provider/bookings/${item.id}`">{{ item.serviceTitle }} · {{ item.petName }}</NuxtLink>
+            <span class="text-ink-500">{{ BOOKING_STATUS_LABELS[item.status] }}</span>
+          </li>
+        </ul>
+      </section>
+
+      <section v-if="earnings" class="mt-10 border-t border-ink-200 pt-8">
+        <h2 class="text-lg font-medium">خلاصه مالی</h2>
+        <p class="mt-2 text-sm leading-7 text-ink-700">
+          دریافتی تأییدشده {{ toman(earnings.grossPaid) }} · کارمزد {{ toman(earnings.platformFees) }} · سهم شما {{ toman(earnings.providerEarnings) }}
+        </p>
+        <p class="mt-1 text-sm text-ink-500">پرداخت‌نشده: {{ toman(earnings.unpaid) }}</p>
+        <NuxtLink to="/provider/earnings" class="mt-3 inline-block text-sm text-terracotta-700">جزئیات درآمد</NuxtLink>
+      </section>
+    </template>
   </div>
 </template>

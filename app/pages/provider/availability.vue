@@ -3,7 +3,7 @@ import type { AvailabilityException, AvailabilityRule, CalendarDay } from '~~/sh
 import { WEEKDAY_LABELS, WEEKDAY_ORDER, type Weekday } from '~~/shared/constants/availability'
 import { apiErrorMessage } from '~/utils/api-error'
 
-definePageMeta({ middleware: 'auth' })
+definePageMeta({ middleware: 'auth', layout: 'provider' })
 
 const rules = ref<AvailabilityRule[]>([])
 const exceptions = ref<AvailabilityException[]>([])

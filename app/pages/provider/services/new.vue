@@ -2,7 +2,7 @@
 import type { ServiceCategory } from '~~/shared/types/provider'
 import { apiErrorMessage } from '~/utils/api-error'
 
-definePageMeta({ middleware: 'auth' })
+definePageMeta({ middleware: 'auth', layout: 'provider' })
 
 const categories = ref<ServiceCategory[]>([])
 const pending = ref(false)

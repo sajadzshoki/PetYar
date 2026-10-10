@@ -1,6 +1,6 @@
 # PetYar (پت‌یار)
 
-Iranian pet-services marketplace. **Phase 09** adds reviews, ratings, and favorites on completed bookings. Admin, verification badges, and realtime sockets are intentionally not implemented.
+Iranian pet-services marketplace. **Phase 10** is the provider workspace: bookings, calendar, services, profile, reviews, earnings from stored payments, transactions, honest verification status, and account settings. Admin, verification badges, and realtime sockets are intentionally not implemented.
 
 ## Architecture
 
@@ -20,7 +20,7 @@ Rules:
 - Object storage is an interface (`server/storage`) with a local adapter and a MinIO-ready driver switch.
 - PWA-ready: `public/manifest.webmanifest`, theme color, RTL, mobile-first layout.
 
-Pets and provider marketplace listings are implemented. Future tables (availability, bookings, payments, reviews, messages, notifications, favorites, reports, disputes, verification) are still out of scope.
+Pets, providers, availability, bookings, payments, messaging, reviews, favorites, and the provider operations workspace are implemented. Admin, disputes, and document verification remain out of scope.
 
 ## Local setup
 

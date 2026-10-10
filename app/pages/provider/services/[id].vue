@@ -2,7 +2,7 @@
 import type { ProviderService, ServiceCategory } from '~~/shared/types/provider'
 import { apiErrorMessage } from '~/utils/api-error'
 
-definePageMeta({ middleware: 'auth' })
+definePageMeta({ middleware: 'auth', layout: 'provider' })
 
 const route = useRoute()
 const id = computed(() => String(route.params.id))

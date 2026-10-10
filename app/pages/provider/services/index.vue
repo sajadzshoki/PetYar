@@ -3,7 +3,7 @@ import type { ProviderService } from '~~/shared/types/provider'
 import { PRICING_TYPE_LABELS } from '~~/shared/constants/providers'
 import { apiErrorMessage } from '~/utils/api-error'
 
-definePageMeta({ middleware: 'auth' })
+definePageMeta({ middleware: 'auth', layout: 'provider' })
 
 const services = ref<ProviderService[]>([])
 const loading = ref(true)
@@ -52,7 +52,7 @@ onMounted(load)
 
 <template>
   <div class="mx-auto max-w-2xl px-4 py-12">
-    <NuxtLink to="/provider" class="text-sm text-ink-600">پرونده ارائه‌دهنده</NuxtLink>
+    <NuxtLink to="/provider/profile" class="text-sm text-ink-600">پرونده ارائه‌دهنده</NuxtLink>
     <div class="mt-3 flex items-end justify-between gap-4">
       <h1 class="text-2xl font-semibold">خدمات من</h1>
       <UButton to="/provider/services/new" size="sm">خدمت جدید</UButton>

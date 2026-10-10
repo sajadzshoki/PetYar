@@ -3,7 +3,7 @@ import type { Booking } from '~~/shared/types/booking'
 import { BOOKING_STATUS_LABELS } from '~~/shared/constants/bookings'
 import { apiErrorMessage } from '~/utils/api-error'
 
-definePageMeta({ middleware: 'auth' })
+definePageMeta({ middleware: 'auth', layout: 'provider' })
 
 const route = useRoute()
 const id = computed(() => String(route.params.id))

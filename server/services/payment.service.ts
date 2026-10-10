@@ -6,7 +6,8 @@ import { getPaymentGateway, paymentFeeBps } from '../payments'
 import { conflict, forbidden, notFound, validationError } from '../utils/errors'
 import { logger } from '../utils/logger'
 import { notificationService } from './notification.service'
-import type { Payment, PaymentGatewayInfo, PaymentTransaction, PaymentWithTransactions } from '../../shared/types/payment'
+import type { Payment, PaymentGatewayInfo, PaymentTransaction, PaymentWithTransactions, ProviderEarnings } from '../../shared/types/payment'
+import { providerService } from './provider.service'
 import type { PaymentStatus } from '../../shared/constants/payments'
 import { IRR_CURRENCY } from '../../shared/constants/payments'
 import { parseIrr, remainingRefundable, splitPlatformFee } from '../../shared/utils/money'
@@ -127,6 +128,33 @@ export const paymentService = {
     const row = await this.getById(paymentId)
     if (!row || row.providerId !== providerId) throw notFound('پرداخت یافت نشد')
     return this.withTransactions(row)
+  },
+
+  async listForProvider(userId: string): Promise<Payment[]> {
+    const provider = await providerService.requireOwned(userId)
+    const db = getDb()
+    const rows = await db.select().from(payments)
+      .where(eq(payments.providerId, provider.id))
+      .orderBy(desc(payments.createdAt))
+    const configured = getPaymentGateway().configured
+    return rows.map(row => toPayment(row, configured))
+  },
+
+  async earningsForProvider(userId: string): Promise<{ earnings: ProviderEarnings, payments: Payment[] }> {
+    const items = await this.listForProvider(userId)
+    const paid = items.filter(p => p.status === 'PAID' || p.status === 'PARTIALLY_REFUNDED')
+    const unpaid = items.filter(p => p.status === 'PENDING' || p.status === 'PROCESSING')
+    const earnings: ProviderEarnings = {
+      currency: IRR_CURRENCY,
+      grossPaid: paid.reduce((s, p) => s + p.amount, 0),
+      platformFees: paid.reduce((s, p) => s + p.platformFee, 0),
+      providerEarnings: paid.reduce((s, p) => s + Math.max(0, p.providerPayout - p.refundedAmount), 0),
+      refunded: paid.reduce((s, p) => s + p.refundedAmount, 0),
+      unpaid: unpaid.reduce((s, p) => s + p.amount, 0),
+      paidCount: paid.length,
+      unpaidCount: unpaid.length,
+    }
+    return { earnings, payments: items }
   },
 
   async withTransactions(row: PaymentRow): Promise<PaymentWithTransactions> {
