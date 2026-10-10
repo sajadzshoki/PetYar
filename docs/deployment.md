@@ -27,6 +27,17 @@ Preview locally: `npm run preview` (already binds `0.0.0.0`).
 
 MinIO is under the `storage` compose profile.
 
+## Tests before release
+
+```bash
+npm run typecheck
+npm run lint
+npm test
+npm run build
+```
+
+Integration tests need `TEST_DATABASE_URL` and migrations through `0010_phase12_audit.sql`. See `docs/testing.md`.
+
 ## Do not
 
 - Commit `.env`

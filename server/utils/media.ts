@@ -52,7 +52,6 @@ export function canAccessMedia(userId: string, key: string) {
   return isPublicMedia(key)
     || key.startsWith(`avatars/${userId}/`)
     || key.startsWith(`pets/${userId}/`)
-    || key.startsWith('messages/')
 }
 
 export function isMessageMedia(key: string) {

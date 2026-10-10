@@ -16,7 +16,9 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx server/db/seed.ts",
-    "test": "tsx --test shared/utils/money.test.ts"
+    "test": "tsx --test shared/utils/money.test.ts tests/unit/*.test.ts tests/integration/*.test.ts",
+    "test:unit": "tsx --test shared/utils/money.test.ts tests/unit/*.test.ts",
+    "test:integration": "tsx --test tests/integration/*.test.ts"
   },
   "dependencies": {
     "@nuxt/ui": "^4.11.3",

@@ -10,6 +10,7 @@ import { getObjectStorage } from '../storage'
 import { mediaKey, mediaUrl } from '../utils/media'
 import { providerService } from './provider.service'
 import { auditService } from './audit.service'
+import { requireAdminActor } from '../utils/admin-actor'
 import { notificationService } from './notification.service'
 
 function toDoc(row: VerificationDocumentRow): VerificationDocument {
@@ -196,6 +197,7 @@ export const verificationService = {
   },
 
   async review(adminId: string, id: string, status: 'APPROVED' | 'REJECTED' | 'NEEDS_CHANGES', note?: string) {
+    await requireAdminActor(adminId)
     const current = await this.require(id)
     if (current.status !== 'PENDING') {
       throw conflict('فقط درخواست در صف بررسی قابل تصمیم است')

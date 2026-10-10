@@ -26,6 +26,12 @@ In-process per IP on login, register, report create, and pay. Not a substitute f
 
 National ID lives on verification applications and is returned to the owning provider and to admins only — not on public provider payloads (pending/rejected statuses are collapsed to `UNVERIFIED` for public views).
 
+## Admin mutations
+
+`adminService`, dispute resolve, report resolve, and verification review call `requireAdminActor` (DB `role=ADMIN` and `ACTIVE`), in addition to `requireAdmin` on HTTP handlers.
+
+Payment callbacks reject a mismatched `authority` for an existing payment row. Message attachments are authorized only via conversation membership, not a global `messages/` prefix.
+
 ## Audit
 
 Administrative and safety mutations write `audit_logs`.

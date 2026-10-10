@@ -79,8 +79,12 @@ Migrations live in `server/db/migrations` (`0000`–`0010`). Apply them in order
 npm run dev          # binds 0.0.0.0
 npm run typecheck
 npm run lint
-npm test
+npm test             # unit + integration (integration skips without DATABASE_URL)
+npm run test:unit
+# TEST_DATABASE_URL=postgres://... npm run db:migrate && npm run test:integration
 ```
+
+See `docs/testing.md`.
 
 ## Production build
 

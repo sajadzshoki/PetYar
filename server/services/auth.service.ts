@@ -18,7 +18,7 @@ export const authService = {
       throw conflict('این ایمیل قبلاً ثبت شده است')
     }
 
-    const role = input.role === 'ADMIN' ? DEFAULT_USER_ROLE : (input.role ?? DEFAULT_USER_ROLE)
+    const role = input.role ?? DEFAULT_USER_ROLE
     const passwordHash = await hashPassword(input.password)
 
     const [created] = await db.insert(users).values({

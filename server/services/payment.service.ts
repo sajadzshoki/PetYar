@@ -273,6 +273,9 @@ export const paymentService = {
     }
     if (!row) throw notFound('پرداخت یافت نشد')
     if (row.ownerId !== params.actorId) throw forbidden()
+    if (authority && row.authority && authority !== row.authority) {
+      throw conflict('شناسه درگاه با این پرداخت همخوانی ندارد')
+    }
 
     if (row.status === 'PAID' || row.status === 'REFUNDED' || row.status === 'PARTIALLY_REFUNDED') {
       return toPayment(row, getPaymentGateway().configured)

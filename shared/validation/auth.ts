@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { USER_ROLES } from '../constants/roles'
 
 export const emailSchema = z
   .string({ required_error: 'ایمیل الزامی است' })
@@ -23,7 +22,7 @@ export const registerSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
   displayName: displayNameSchema,
-  role: z.enum(USER_ROLES).optional(),
+  role: z.enum(['OWNER', 'PROVIDER']).optional(),
 })
 
 export const loginSchema = z.object({

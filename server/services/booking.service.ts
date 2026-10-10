@@ -23,6 +23,7 @@ import { messagingService } from './messaging.service'
 import { notificationService } from './notification.service'
 import { reviewService } from './review.service'
 import { disputeService } from './dispute.service'
+import { canTransitionBooking } from '../../shared/utils/booking-status'
 
 type Tx = Parameters<Parameters<ReturnType<typeof getDb>['transaction']>[0]>[0]
 
@@ -98,7 +99,7 @@ async function requirePaidIfPriced(row: BookingRow) {
 }
 
 function assertTransition(from: BookingStatus, to: BookingStatus, allowed: BookingStatus[]) {
-  if (from !== to && !allowed.includes(from)) {
+  if (!canTransitionBooking(from, to, allowed)) {
     throw conflict(`این رزرو در وضعیت «${from}» قابل تغییر به «${to}» نیست`)
   }
 }

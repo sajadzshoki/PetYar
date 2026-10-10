@@ -7,9 +7,9 @@ export const paymentRefundSchema = z.object({
     .transform((value) => {
       if (value === null || value === undefined || value === '') return null
       const n = typeof value === 'number' ? value : Number(value)
-      return Number.isInteger(n) ? n : null
+      return n
     })
-    .refine(value => value === null || value > 0, 'مبلغ بازپرداخت نامعتبر است'),
+    .refine(value => value === null || (Number.isInteger(value) && value > 0), 'مبلغ بازپرداخت نامعتبر است'),
   reason: z.string().trim().min(3, 'دلیل بازپرداخت را بنویسید').max(500),
 })
 

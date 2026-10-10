@@ -6,6 +6,7 @@ import type { BookingDispute } from '../../shared/types/moderation'
 import type { DisputeResolution } from '../../shared/constants/moderation'
 import { conflict, notFound } from '../utils/errors'
 import { auditService } from './audit.service'
+import { requireAdminActor } from '../utils/admin-actor'
 import { notificationService } from './notification.service'
 import type { BookingStatus } from '../../shared/constants/bookings'
 
@@ -77,6 +78,7 @@ export const disputeService = {
   },
 
   async resolve(adminId: string, id: string, resolution: DisputeResolution, note: string) {
+    await requireAdminActor(adminId)
     const current = await this.require(id)
     if (current.status === 'RESOLVED' || current.status === 'DISMISSED') {
       throw conflict('این اختلاف بسته شده است')

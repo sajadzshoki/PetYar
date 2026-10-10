@@ -2,6 +2,7 @@ import { desc, eq, ilike, or, sql } from 'drizzle-orm'
 import { getDb } from '../db/client'
 import { bookings, pets, providerServices, providers, reviews, users } from '../db/schema'
 import { forbidden, notFound } from '../utils/errors'
+import { requireAdminActor } from '../utils/admin-actor'
 import { auditService } from './audit.service'
 import { notificationService } from './notification.service'
 import type { AdminReview, AdminUser } from '../../shared/types/moderation'
@@ -42,6 +43,7 @@ export const adminService = {
   },
 
   async setUserStatus(adminId: string, userId: string, status: UserStatus, reason: string) {
+    await requireAdminActor(adminId)
     if (adminId === userId) throw forbidden('نمی‌توانید وضعیت حساب خود را تغییر دهید')
     const db = getDb()
     const [row] = await db.select().from(users).where(eq(users.id, userId)).limit(1)
@@ -108,6 +110,7 @@ export const adminService = {
   },
 
   async setProviderActive(adminId: string, providerId: string, isActive: boolean, reason: string) {
+    await requireAdminActor(adminId)
     const db = getDb()
     const [row] = await db.update(providers).set({
       isActive,
@@ -182,6 +185,7 @@ export const adminService = {
   },
 
   async hideReview(adminId: string, reviewId: string, reason: string) {
+    await requireAdminActor(adminId)
     const db = getDb()
     const [row] = await db.update(reviews).set({
       hiddenAt: new Date(),
@@ -200,6 +204,7 @@ export const adminService = {
   },
 
   async restoreReview(adminId: string, reviewId: string) {
+    await requireAdminActor(adminId)
     const db = getDb()
     const [row] = await db.update(reviews).set({
       hiddenAt: null,

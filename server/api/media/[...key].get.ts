@@ -21,8 +21,10 @@ export default defineEventHandler(async (event) => {
           if (!provider || !key.startsWith(`verification/${provider.id}/`)) throw forbidden()
         }
       }
+      else if (isMessageMedia(key)) {
+        if (!await messagingService.canAccessAttachment(session.id, key)) throw forbidden()
+      }
       else if (!canAccessMedia(session.id, key)) throw forbidden()
-      if (isMessageMedia(key) && !await messagingService.canAccessAttachment(session.id, key)) throw forbidden()
     }
 
     const body = await getObjectStorage().get(key)

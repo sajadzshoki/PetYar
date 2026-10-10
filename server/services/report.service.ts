@@ -6,6 +6,7 @@ import type { SafetyReport } from '../../shared/types/moderation'
 import type { ReportCreateInput } from '../../shared/validation/moderation'
 import { conflict, forbidden, notFound } from '../utils/errors'
 import { auditService } from './audit.service'
+import { requireAdminActor } from '../utils/admin-actor'
 import { notificationService } from './notification.service'
 
 function toReport(row: ReportRow, reporterName: string): SafetyReport {
@@ -106,6 +107,7 @@ export const reportService = {
   },
 
   async setStatus(adminId: string, id: string, status: 'IN_REVIEW' | 'RESOLVED' | 'DISMISSED', note: string) {
+    await requireAdminActor(adminId)
     const current = await this.require(id)
     if (current.status === 'RESOLVED' || current.status === 'DISMISSED') {
       throw conflict('این گزارش بسته شده است')
